@@ -1,28 +1,31 @@
-# Special Letter 3D — Volumetric ASCII & Flower Bouquet 💌💐
+# Special Letter — Single Rose Animation 💌🌹
 
-Animated 3D Volumetric ASCII & Botanical Typography project in Python (`pygame-ce` + `numpy`), featuring 3D XYZ coordinate axes, interactive 3D orbit camera controls, touchscreen/mouse interaction, dedicated replay button, and a seamless 3D spline morphing transition into a lush flower bouquet.
+Animated 2D Botanical ASCII & Typography project in Python (`pygame-ce`), featuring a high-density ASCII envelope that morphs into a living, swaying, breathing grand single rose.
 
 ## Features
-- **3D XYZ Coordinate Axes**:
-  - **World Origin Tripod**: Red (X), Green (Y), Blue (Z) axes drawn with 3D projection.
-  - **Top-Right 3D Orientation Gizmo**: Interactive rotation indicator tracking camera orientation in real time.
-- **Dedicated Replay UI Button (`↺ Replay`)**:
-  - Placed at the bottom-left corner of the bouquet screen.
-  - Clicking/dragging the 3D model will never accidentally reset the scene; only clicking the designated button triggers replay.
-- **Ultra-Aesthetic 3D Flower Bouquet**:
-  - Built using Fibonacci phyllotaxis ($\theta = 137.5^\circ$) for organic petal geometry.
-  - Multi-tier color ramp: Deep velvet wine $\to$ Crimson $\to$ Coral $\to$ Champagne rose highlights.
-  - Side peonies, peach tulips, chamomile daisies, and eucalyptus foliage.
-  - Pure visual presentation (text removed per user preference).
-- **High-Detail 3D Envelope**:
-  - Slanted hatch borders, fine paper texture, and diagonal crease highlights.
-  - Flap physically hinges and folds open 175° in 3D space.
-  - Pulsing magenta heart wax seal elevated in 3D.
-- **3D Controls**:
-  - **Left Click / Touch Tap**: Open letter.
-  - **Mouse / Touch Drag**: Orbit camera around 3D space (360° Pitch & Yaw).
-  - **Mouse Scroll**: Zoom in / out.
-  - **`↺ Replay` Button**: Reset animation.
+- **High-Detail 2D ASCII Envelope**:
+  - Slanted hatch borders (`/ / / /`) top & bottom matching original reference.
+  - Textured warm peach/sepia paper with diagonal crease fold highlights.
+  - Pulsing magenta heart wax seal (`♥`, `@`, `#`) that bursts with particles when opened.
+- **Pure 2D Rendering with Organic Motion**:
+  - **Living Wind Sway**: The rose stem sways naturally in the breeze using height-attenuated sine oscillations.
+  - **Breathing Blossom Bloom**: Rose petals gently breathe and pulse with realistic organic rhythm.
+  - **Ambient Life**: Rising dewdrops, floating petals, and soft floral shimmer.
+- **Grand Single Rose Anatomy**:
+  - **Blossom Head**: Concentric Fibonacci spiraling petals (Velvet wine $\to$ Crimson $\to$ Coral $\to$ Champagne tips).
+  - **Sepals**: Green calyx cradling the flower head.
+  - **Botanical Stem**: Elegant S-curved emerald stem with thorns (`<`, `>`).
+  - **Serrated Leaves**: Left and right leaf branches with vein highlights.
+- **Pure ASCII Typography Replay Icon**:
+  - Minimalist ASCII icon badge at bottom-left:
+    ```
+     .----. 
+    /  <-- \
+    \      /
+     '----' 
+    ```
+  - Standard monospace characters (no missing unicode box `[?]`).
+  - Only clicking this icon triggers reset; no text or prompt lines cluttering the screen.
 
 ## Requirements
 ```bash
@@ -33,3 +36,8 @@ pip install -r requirements.txt
 ```bash
 python letter.py
 ```
+
+## Controls
+- **Click / Tap screen**: Open envelope.
+- **Click ASCII Icon (Bottom-Left)**: Replay animation.
+- **ESC**: Exit window.
