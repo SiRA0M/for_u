@@ -8,13 +8,13 @@ import pygame
 # ==============================================================================
 # CONFIGURATION & CONSTANTS
 # ==============================================================================
-TITLE = "Special Letter 3D 💌 Volumetric Bouquet"
+TITLE = "Special Letter 3D"
 WINDOW_WIDTH = 1150
 WINDOW_HEIGHT = 860
 FPS = 60
 
-# Camera & 3D Projection
-FOV = 880.0
+# 3D Camera Projection
+FOV = 900.0
 CAMERA_DIST = 920.0
 ZOOM_MIN = 450.0
 ZOOM_MAX = 1600.0
@@ -23,11 +23,6 @@ ZOOM_MAX = 1600.0
 # COLOR PALETTE (RGB)
 # ------------------------------------------------------------------------------
 COLOR_BG = (10, 8, 16)
-
-# XYZ Axes Colors
-COL_AXIS_X = (255, 65, 75)    # Red = X
-COL_AXIS_Y = (65, 225, 95)    # Green = Y
-COL_AXIS_Z = (65, 165, 255)   # Blue = Z
 
 # Envelope Colors (Warm Peach / Sepia / Gold with Purple Rim)
 COL_BORDER = (248, 222, 205)
@@ -43,34 +38,36 @@ COL_SEAL_OUTER = (210, 25, 88)
 COL_SEAL_SPECULAR = (255, 215, 240)
 
 # Bouquet Floral Colors
-COL_WRAPPER = (242, 218, 212)
-COL_WRAPPER_SHADOW = (185, 145, 155)
-COL_RIBBON = (255, 80, 140)
+COL_WRAP_OUTER = (242, 222, 215)
+COL_WRAP_INNER = (252, 238, 230)
+COL_WRAP_SHADOW = (180, 145, 155)
+COL_RIBBON = (255, 75, 135)
 COL_RIBBON_GOLD = (255, 215, 110)
 
-COL_STEM_DEEP = (38, 110, 55)
-COL_STEM_LIGHT = (68, 165, 88)
-COL_LEAF_DARK = (48, 130, 68)
-COL_LEAF_BRIGHT = (88, 195, 105)
-COL_LEAF_MINT = (135, 220, 160)
+COL_STEM_DEEP = (35, 105, 50)
+COL_STEM_LIGHT = (65, 160, 82)
+COL_LEAF_DARK = (45, 125, 62)
+COL_LEAF_BRIGHT = (82, 190, 100)
+COL_LEAF_MINT = (130, 215, 155)
 COL_EUCALYPTUS = (110, 185, 155)
 
-# Flower Colors
-COL_ROSE_DEEP = (145, 12, 42)     # Velvet core
-COL_ROSE_RED = (235, 28, 68)      # Mid petal
-COL_ROSE_CORAL = (255, 95, 145)   # Outer petal
-COL_ROSE_CHAMPAGNE = (255, 195, 215) # Tip highlight
+# Flower Bloom Gradients
+COL_ROSE_DEEP = (130, 8, 35)        # Deep velvet wine
+COL_ROSE_RED = (235, 25, 65)        # Rich crimson
+COL_ROSE_CORAL = (255, 90, 145)     # Glowing coral rose
+COL_ROSE_CHAMPAGNE = (255, 205, 225) # Soft petal edge highlight
 
 COL_PEONY_PURPLE = (165, 70, 225)
 COL_PEONY_LILAC = (215, 140, 255)
-COL_PEONY_SOFT = (245, 205, 255)
+COL_PEONY_SOFT = (250, 210, 255)
 
-COL_TULIP_CORAL = (255, 115, 95)
-COL_TULIP_PEACH = (255, 175, 130)
+COL_TULIP_CORAL = (255, 115, 90)
+COL_TULIP_APRICOT = (255, 175, 125)
 
 COL_DAISY_WHITE = (255, 252, 248)
 COL_DAISY_YELLOW = (255, 215, 55)
 
+COL_BABY_BREATH = (255, 250, 240)
 COL_GOLD_SPARK = (255, 235, 145)
 COL_WHITE_SPARK = (255, 255, 255)
 
@@ -81,7 +78,7 @@ SPARKLE_CHARS = ["*", "+", "·", "✧", "✦", "°", "•", "♡", "❀"]
 
 
 # ==============================================================================
-# 3D ROTATION & PROJECTION ENGINE
+# 3D MATH & PROJECTION ENGINE
 # ==============================================================================
 def create_rotation_matrix(pitch, yaw, roll=0.0):
     """Calculates combined 3x3 rotation matrix for 3D camera orientation."""
@@ -110,112 +107,64 @@ def project_points_3d(pts_3d, R_cam, cam_dist, fov, center_screen):
 
 
 # ==============================================================================
-# 3D XYZ AXES GIZMO (Origin Tripod + Top-Right HUD Widget)
+# PURE ASCII / TYPOGRAPHY REPLAY ICON BUTTON
 # ==============================================================================
-class AxisGizmo:
-    """Renders 3D coordinate axes both at origin and as a corner orientation widget."""
-    def __init__(self, axis_length=120.0):
-        self.axis_length = axis_length
-        # Unit vectors along X, Y, Z
-        self.origin = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-        self.axis_ends = np.array([
-            [axis_length, 0.0, 0.0],   # X
-            [0.0, -axis_length, 0.0],  # Y (Up in world)
-            [0.0, 0.0, axis_length],   # Z (Front)
-        ], dtype=np.float32)
+class AsciiReplayButton:
+    """A purely ASCII / Typography Art Replay Icon button at bottom-left."""
+    # Custom ASCII badge icon design (circular return arrow in ASCII)
+    ICON_LINES = [
+        " .----. ",
+        "/  <-- \\",
+        "\\      /",
+        " '----' "
+    ]
 
-    def draw_origin_axes(self, surface, font, R_cam, cam_dist, fov, center_screen):
-        """Draws XYZ tripod directly at world origin."""
-        all_pts = np.vstack([self.origin, self.axis_ends])
-        sx, sy, z_safe, scale, _ = project_points_3d(all_pts, R_cam, cam_dist, fov, center_screen)
-        
-        ox, oy = int(sx[0]), int(sy[0])
-        axes_info = [
-            (sx[1], sy[1], COL_AXIS_X, "X"),
-            (sx[2], sy[2], COL_AXIS_Y, "Y"),
-            (sx[3], sy[3], COL_AXIS_Z, "Z"),
-        ]
-        
-        for ax, ay, col, label in axes_info:
-            ex, ey = int(ax), int(ay)
-            # Line
-            pygame.draw.line(surface, col, (ox, oy), (ex, ey), 2)
-            # Label
-            lbl_surf = font.render(label, True, col)
-            surface.blit(lbl_surf, (ex + 4, ey - 7))
-
-    def draw_corner_hud(self, surface, font, R_cam, corner_pos=(WINDOW_WIDTH - 70, 70), radius=38.0):
-        """Draws interactive 3D orientation cube/tripod in top-right HUD."""
-        cx, cy = corner_pos
-        # Background ring
-        pygame.draw.circle(surface, (25, 20, 35), (cx, cy), int(radius + 8))
-        pygame.draw.circle(surface, (55, 45, 75), (cx, cy), int(radius + 8), 1)
-
-        # Rotate standard unit axes by camera orientation
-        rotated_axes = self.axis_ends @ R_cam.T
-        # Depth sort the 3 axes
-        order = np.argsort(rotated_axes[:, 2])
-
-        axes_info = [
-            (0, COL_AXIS_X, "X"),
-            (1, COL_AXIS_Y, "Y"),
-            (2, COL_AXIS_Z, "Z"),
-        ]
-
-        for idx in order:
-            rot = rotated_axes[idx]
-            col = axes_info[idx][1]
-            label = axes_info[idx][2]
-            
-            # 2D projection on HUD widget
-            scale_fac = radius / self.axis_length
-            ex = int(cx + rot[0] * scale_fac)
-            ey = int(cy + rot[1] * scale_fac)
-            
-            # Axis line with thickness based on Z
-            thick = 3 if rot[2] < 0 else 1
-            pygame.draw.line(surface, col, (cx, cy), (ex, ey), thick)
-            
-            # Axis endpoint dot & label
-            pygame.draw.circle(surface, col, (ex, ey), 3)
-            lbl = font.render(label, True, col)
-            surface.blit(lbl, (ex + 3, ey - 6))
-
-
-# ==============================================================================
-# BACK / REPLAY BUTTON WIDGET (Final Screen)
-# ==============================================================================
-class ReplayButton:
-    """Dedicated interactive button so users don't accidentally restart on screen click."""
-    def __init__(self, x=45, y=WINDOW_HEIGHT - 75, w=160, h=44):
-        self.rect = pygame.Rect(x, y, w, h)
+    def __init__(self, x=40, y=WINDOW_HEIGHT - 95):
+        self.x = x
+        self.y = y
+        self.char_w = 9.5
+        self.char_h = 15.0
+        self.w = int(len(self.ICON_LINES[0]) * self.char_w) + 12
+        self.h = int(len(self.ICON_LINES) * self.char_h) + 10
+        self.rect = pygame.Rect(x - 6, y - 5, self.w, self.h)
         self.is_hovered = False
 
     def update(self, mouse_pos):
         self.is_hovered = self.rect.collidepoint(mouse_pos)
 
     def draw(self, surface, font):
-        # Colors
-        bg_col = (50, 30, 65) if not self.is_hovered else (85, 45, 110)
-        border_col = (180, 120, 220) if not self.is_hovered else (255, 180, 240)
-        txt_col = (240, 220, 255) if not self.is_hovered else (255, 255, 255)
+        # Color transition when hovered
+        if self.is_hovered:
+            col_fg = (255, 235, 180)     # Bright glowing gold
+            col_accent = (255, 80, 160)  # Vivid pink
+            col_bg = (35, 20, 45)
+            col_border = (200, 120, 220)
+        else:
+            col_fg = (210, 180, 235)     # Soft lavender
+            col_accent = (180, 100, 210)
+            col_bg = (20, 14, 28)
+            col_border = (80, 55, 105)
 
-        # Rounded rectangle
-        pygame.draw.rect(surface, bg_col, self.rect, border_radius=10)
-        pygame.draw.rect(surface, border_col, self.rect, 2, border_radius=10)
+        # Subtle backdrop badge
+        pygame.draw.rect(surface, col_bg, self.rect, border_radius=8)
+        pygame.draw.rect(surface, col_border, self.rect, 1, border_radius=8)
 
-        # Text with icon
-        txt = "↺  Replay"
-        t_surf = font.render(txt, True, txt_col)
-        t_rect = t_surf.get_rect(center=self.rect.center)
-        surface.blit(t_surf, t_rect)
+        # Render ASCII icon characters
+        for r_idx, line in enumerate(self.ICON_LINES):
+            py = self.y + r_idx * self.char_h
+            for c_idx, ch in enumerate(line):
+                if ch != " ":
+                    px = self.x + c_idx * self.char_w
+                    color = col_accent if ch in ["<", "-", "-"] else col_fg
+                    t_surf = font.render(ch, True, color)
+                    surface.blit(t_surf, (int(px), int(py)))
 
 
 # ==============================================================================
 # HIGH-DETAIL 3D ENVELOPE GENERATOR
 # ==============================================================================
 class Envelope3D:
-    def __init__(self, width=740.0, height=440.0):
+    def __init__(self, width=750.0, height=445.0):
         self.w = width
         self.h = height
         
@@ -330,10 +279,10 @@ class Envelope3D:
 
 
 # ==============================================================================
-# HIGH-AESTHETIC 3D FLOWER BOUQUET GENERATOR (Fibonacci Phyllotaxis)
+# REDESIGNED GORGEOUS 3D BOTANICAL BOUQUET
 # ==============================================================================
 class Bouquet3D:
-    """Generates true 3D volumetric coordinates for an ultra-aesthetic botanical bouquet."""
+    """Volumetric 3D flower bouquet with Korean layered kraft wrap, rich multi-tier blooms."""
     def __init__(self, total_points=2400):
         self.total_points = total_points
         self.points_3d = np.zeros((total_points, 3), dtype=np.float32)
@@ -342,64 +291,80 @@ class Bouquet3D:
         self._generate_3d_bouquet()
 
     def _generate_3d_bouquet(self):
-        rng = random.Random(888)
+        rng = random.Random(999)
         pts_list = []
         glyphs_list = []
         colors_list = []
 
         # ----------------------------------------------------------------------
-        # 1. 3D CONICAL KRAFT WRAPPER & GOLDEN SATIN RIBBON
+        # 1. KOREAN FLORAL KRAFT WRAPPING (Collar Backdrop + Bottom Conical Wrap)
         # ----------------------------------------------------------------------
+        # A. Flared Paper Collar (Rises up behind the flowers in 3D: z > 0)
+        num_collar = int(self.total_points * 0.12)
+        for _ in range(num_collar):
+            u = rng.uniform(0.0, 1.0)
+            ang = rng.uniform(-math.pi * 0.85, math.pi * 0.85)
+            r = 160.0 + u * 75.0
+            x = math.sin(ang) * r
+            y = -110.0 - math.cos(ang) * (r * 0.55) + u * 30.0
+            z = 25.0 + u * 70.0  # Placed behind blooms
+            
+            # Pleated paper texture
+            pleat = math.sin(ang * 8.0)
+            ch = rng.choice(["/", "\\", "|", "%"]) if pleat > 0 else rng.choice(["#", "%", "="])
+            col = COL_WRAP_OUTER if u > 0.4 else COL_WRAP_INNER
+            pts_list.append([x, y, z])
+            glyphs_list.append(ch)
+            colors_list.append(col)
+
+        # B. Bottom Conical Wrap (Under the bouquet)
         wrap_top_y = 65.0
-        wrap_bot_y = 270.0
-        wrap_top_r = 140.0
-        wrap_bot_r = 42.0
+        wrap_bot_y = 280.0
+        wrap_top_r = 145.0
+        wrap_bot_r = 38.0
         
-        num_wrap = int(self.total_points * 0.17)
-        for _ in range(num_wrap):
+        num_cone = int(self.total_points * 0.14)
+        for _ in range(num_cone):
             u = rng.uniform(0.0, 1.0)
             y = wrap_top_y + u * (wrap_bot_y - wrap_top_y)
             r = wrap_top_r * (1.0 - u) + wrap_bot_r * u
-            theta = rng.uniform(-math.pi * 0.88, math.pi * 0.88)
+            theta = rng.uniform(-math.pi * 0.9, math.pi * 0.9)
             x = math.sin(theta) * r
-            z = math.cos(theta) * r * 0.68
+            z = math.cos(theta) * r * 0.72
             
             if abs(theta) > math.pi * 0.65:
-                col = COL_WRAPPER_SHADOW
+                col = COL_WRAP_SHADOW
                 ch = rng.choice(["|", "/", "\\", "%"])
             else:
-                col = COL_WRAPPER
+                col = COL_WRAP_OUTER if rng.random() < 0.6 else COL_WRAP_INNER
                 ch = rng.choice(["#", "%", "8", "=", ":"])
             pts_list.append([x, y, z])
             glyphs_list.append(ch)
             colors_list.append(col)
 
-        # 3D Satin Ribbon with Trailing Tails
+        # C. 3D Satin Ribbon with Bow Loops
         ribbon_y = wrap_top_y + 36.0
-        num_ribbon = int(self.total_points * 0.07)
+        num_ribbon = int(self.total_points * 0.06)
         for _ in range(num_ribbon):
             choice = rng.random()
             if choice < 0.38:
-                # Left bow loop
                 ang = rng.uniform(0, 2 * math.pi)
-                rad = rng.uniform(8.0, 34.0)
-                x = -34.0 + math.cos(ang) * rad * 1.35
-                y = ribbon_y + math.sin(ang) * rad * 0.7
-                z = -math.sin(ang) * 16.0 - 18.0
+                rad = rng.uniform(8.0, 36.0)
+                x = -36.0 + math.cos(ang) * rad * 1.35
+                y = ribbon_y + math.sin(ang) * rad * 0.75
+                z = -math.sin(ang) * 16.0 - 20.0
                 col = COL_RIBBON
             elif choice < 0.76:
-                # Right bow loop
                 ang = rng.uniform(0, 2 * math.pi)
-                rad = rng.uniform(8.0, 34.0)
-                x = 34.0 + math.cos(ang) * rad * 1.35
-                y = ribbon_y + math.sin(ang) * rad * 0.7
-                z = -math.sin(ang) * 16.0 - 18.0
+                rad = rng.uniform(8.0, 36.0)
+                x = 36.0 + math.cos(ang) * rad * 1.35
+                y = ribbon_y + math.sin(ang) * rad * 0.75
+                z = -math.sin(ang) * 16.0 - 20.0
                 col = COL_RIBBON
             else:
-                # Center knot & golden pin
-                x = rng.uniform(-16, 16)
-                y = ribbon_y + rng.uniform(-14, 14)
-                z = -28.0 + rng.uniform(-5, 5)
+                x = rng.uniform(-18, 18)
+                y = ribbon_y + rng.uniform(-15, 15)
+                z = -30.0 + rng.uniform(-5, 5)
                 col = COL_RIBBON_GOLD
             
             pts_list.append([x, y, z])
@@ -407,22 +372,23 @@ class Bouquet3D:
             colors_list.append(col)
 
         # ----------------------------------------------------------------------
-        # 2. 3D FOLIAGE, EUCALYPTUS & STEMS
+        # 2. 3D BOTANICAL FOLIAGE (Eucalyptus, Ferns, Stems)
         # ----------------------------------------------------------------------
-        num_leaves = int(self.total_points * 0.22)
+        num_foliage = int(self.total_points * 0.20)
         leaf_anchors = [
-            (-150.0, -10.0, -25.0, -0.65, 0.35, 135.0, 50.0, COL_LEAF_BRIGHT),
-            (150.0, -10.0, -25.0,  0.65, 0.35, 135.0, 50.0, COL_LEAF_BRIGHT),
-            (-125.0, -85.0, -55.0, -0.95, -0.20, 115.0, 42.0, COL_EUCALYPTUS),
-            (125.0, -85.0, -55.0,  0.95, -0.20, 115.0, 42.0, COL_EUCALYPTUS),
-            (-65.0, -175.0, 15.0,  -1.30, 0.40, 100.0, 36.0, COL_LEAF_MINT),
-            (65.0, -175.0, 15.0,   1.30, 0.40, 100.0, 36.0, COL_LEAF_MINT),
-            (0.0, -205.0, -35.0,   0.0,  0.50, 90.0, 34.0, COL_LEAF_BRIGHT),
-            (-110.0, -35.0, 65.0,  -0.5, -0.60, 105.0, 42.0, COL_LEAF_DARK),
-            (110.0, -35.0, 65.0,   0.5, -0.60, 105.0, 42.0, COL_LEAF_DARK),
+            # (ax, ay, az, a_xy, a_z, len, wid, col)
+            (-155.0, -15.0, -20.0, -0.65, 0.35, 140.0, 52.0, COL_LEAF_BRIGHT),
+            (155.0, -15.0, -20.0,   0.65, 0.35, 140.0, 52.0, COL_LEAF_BRIGHT),
+            (-130.0, -90.0, -50.0, -0.95, -0.20, 120.0, 44.0, COL_EUCALYPTUS),
+            (130.0, -90.0, -50.0,   0.95, -0.20, 120.0, 44.0, COL_EUCALYPTUS),
+            (-70.0, -180.0, 20.0,  -1.30, 0.40, 105.0, 38.0, COL_LEAF_MINT),
+            (70.0, -180.0, 20.0,    1.30, 0.40, 105.0, 38.0, COL_LEAF_MINT),
+            (0.0, -215.0, -25.0,    0.0,  0.50, 95.0, 35.0, COL_LEAF_BRIGHT),
+            (-115.0, -40.0, 60.0,  -0.5, -0.60, 110.0, 44.0, COL_LEAF_DARK),
+            (115.0, -40.0, 60.0,    0.5, -0.60, 110.0, 44.0, COL_LEAF_DARK),
         ]
 
-        for _ in range(num_leaves):
+        for _ in range(num_foliage):
             la = rng.choice(leaf_anchors)
             ax, ay, az, a_xy, a_z, llen, lwid, lcol = la
             u = rng.uniform(0.1, 1.0)
@@ -431,11 +397,10 @@ class Bouquet3D:
             if abs(v) <= math.sin(u * math.pi):
                 dist_along = u * llen
                 dist_across = v * lwid * 0.5
-                
                 c_xy, s_xy = math.cos(a_xy), math.sin(a_xy)
                 px = ax + c_xy * dist_along - s_xy * dist_across
                 py = ay + s_xy * dist_along + c_xy * dist_across
-                pz = az + math.sin(a_z) * dist_along + math.sin(u * math.pi) * 14.0
+                pz = az + math.sin(a_z) * dist_along + math.sin(u * math.pi) * 15.0
                 
                 ch = rng.choice(["$", "%", "8", "*", "#", ";"])
                 col = lcol if abs(v) > 0.3 else COL_STEM_DEEP
@@ -444,34 +409,31 @@ class Bouquet3D:
                 colors_list.append(col)
 
         # ----------------------------------------------------------------------
-        # 3. HIGH-DENSITY 3D FLORAL BLOOMS (Fibonacci Phyllotaxis)
+        # 3. 3D MASTER ROSE (Centerpiece - Fibonacci Spiral)
         # ----------------------------------------------------------------------
         GOLDEN_ANGLE = 137.507764 * (math.pi / 180.0)
+        num_rose = int(self.total_points * 0.22)
+        rcx, rcy, rcz = 0.0, -62.0, -85.0
+        rose_max_r = 92.0
         
-        # GRAND CENTER ROSE (Rich 4-tier color gradient)
-        num_rose_pts = int(self.total_points * 0.20)
-        rcx, rcy, rcz = 0.0, -58.0, -80.0
-        rose_max_r = 86.0
-        for i in range(num_rose_pts):
-            frac = i / (num_rose_pts - 1)
+        for i in range(num_rose):
+            frac = i / (num_rose - 1)
             r = math.sqrt(frac) * rose_max_r
             theta = i * GOLDEN_ANGLE
+            r_scallop = r * (1.0 + 0.15 * math.sin(5.0 * theta))
             
-            # Scalloped petal edge
-            r_scallop = r * (1.0 + 0.14 * math.sin(5.0 * theta))
             px = rcx + math.cos(theta) * r_scallop
-            py = rcy + math.sin(theta) * r_scallop * 0.95
-            # Deep recessed core to flared petals in 3D
-            pz = rcz - math.cos(frac * math.pi * 0.5) * 36.0 + (frac * 12.0)
+            py = rcy + math.sin(theta) * r_scallop * 0.94
+            # Deep conical cup to flared outward petals in 3D
+            pz = rcz - math.cos(frac * math.pi * 0.5) * 42.0 + (frac * 14.0)
             
-            # 4-tier color ramp
-            if frac < 0.20:
+            if frac < 0.18:
                 col = COL_ROSE_DEEP
                 ch = rng.choice(["@", "#", "♥"])
-            elif frac < 0.55:
+            elif frac < 0.52:
                 col = COL_ROSE_RED
                 ch = rng.choice(["%", "&", "♥", "8"])
-            elif frac < 0.85:
+            elif frac < 0.84:
                 col = COL_ROSE_CORAL
                 ch = rng.choice(["*", "✿", "(", ")"])
             else:
@@ -482,47 +444,49 @@ class Bouquet3D:
             glyphs_list.append(ch)
             colors_list.append(col)
 
-        # SIDE BLOOMS (Peonies, Tulips, Daisies, Baby's Breath)
-        side_blooms = [
-            # Left Peony
-            {"cx": -92.0, "cy": -46.0, "cz": -32.0, "rad": 68.0, "type": "peony", "col_core": COL_PEONY_PURPLE, "col_mid": COL_PEONY_LILAC, "col_edge": COL_PEONY_SOFT},
-            # Right Rose
-            {"cx": 92.0, "cy": -46.0, "cz": -32.0, "rad": 68.0, "type": "rose", "col_core": COL_ROSE_DEEP, "col_mid": COL_ROSE_CORAL, "col_edge": COL_ROSE_CHAMPAGNE},
-            # Top-Left Coral Tulip
-            {"cx": -62.0, "cy": -135.0, "cz": -12.0, "rad": 50.0, "type": "tulip", "col_core": COL_TULIP_CORAL, "col_mid": COL_TULIP_CORAL, "col_edge": COL_TULIP_PEACH},
-            # Top-Right Pink Rosebud
-            {"cx": 62.0, "cy": -135.0, "cz": -12.0, "rad": 50.0, "type": "rose", "col_core": COL_ROSE_RED, "col_mid": COL_ROSE_CORAL, "col_edge": COL_ROSE_CHAMPAGNE},
-            # Perimeter Daisies & Baby's Breath
-            {"cx": -138.0, "cy": 18.0, "cz": 22.0, "rad": 38.0, "type": "daisy", "col_core": COL_DAISY_YELLOW, "col_mid": COL_DAISY_WHITE, "col_edge": COL_DAISY_WHITE},
-            {"cx": 138.0, "cy": 18.0, "cz": 22.0, "rad": 38.0, "type": "daisy", "col_core": COL_DAISY_YELLOW, "col_mid": COL_DAISY_WHITE, "col_edge": COL_DAISY_WHITE},
-            {"cx": 0.0, "cy": -165.0, "cz": 18.0, "rad": 40.0, "type": "daisy", "col_core": COL_DAISY_YELLOW, "col_mid": COL_DAISY_WHITE, "col_edge": COL_DAISY_WHITE},
+        # ----------------------------------------------------------------------
+        # 4. SURROUNDING LUXURY BLOOMS (Peonies, Apricot Tulips, Daisies, Baby's Breath)
+        # ----------------------------------------------------------------------
+        surrounding_heads = [
+            # Left Fluffy Lilac Peony
+            {"cx": -96.0, "cy": -50.0, "cz": -35.0, "rad": 72.0, "type": "peony", "col_core": COL_PEONY_PURPLE, "col_mid": COL_PEONY_LILAC, "col_edge": COL_PEONY_SOFT},
+            # Right Velvet Rose
+            {"cx": 96.0, "cy": -50.0, "cz": -35.0, "rad": 72.0, "type": "rose", "col_core": COL_ROSE_DEEP, "col_mid": COL_ROSE_CORAL, "col_edge": COL_ROSE_CHAMPAGNE},
+            # Top-Left Coral/Apricot Tulip
+            {"cx": -65.0, "cy": -145.0, "cz": -15.0, "rad": 54.0, "type": "tulip", "col_core": COL_TULIP_CORAL, "col_mid": COL_TULIP_CORAL, "col_edge": COL_TULIP_APRICOT},
+            # Top-Right Pink Blossom
+            {"cx": 65.0, "cy": -145.0, "cz": -15.0, "rad": 54.0, "type": "rose", "col_core": COL_ROSE_RED, "col_mid": COL_ROSE_CORAL, "col_edge": COL_ROSE_CHAMPAGNE},
+            # Perimeter Starry Daisies
+            {"cx": -142.0, "cy": 16.0, "cz": 25.0, "rad": 40.0, "type": "daisy", "col_core": COL_DAISY_YELLOW, "col_mid": COL_DAISY_WHITE, "col_edge": COL_DAISY_WHITE},
+            {"cx": 142.0, "cy": 16.0, "cz": 25.0, "rad": 40.0, "type": "daisy", "col_core": COL_DAISY_YELLOW, "col_mid": COL_DAISY_WHITE, "col_edge": COL_DAISY_WHITE},
+            {"cx": 0.0, "cy": -175.0, "cz": 20.0, "rad": 42.0, "type": "daisy", "col_core": COL_DAISY_YELLOW, "col_mid": COL_DAISY_WHITE, "col_edge": COL_DAISY_WHITE},
         ]
 
-        remaining_pts = self.total_points - len(pts_list)
-        pts_per_bloom = remaining_pts // len(side_blooms)
+        rem_pts = self.total_points - len(pts_list)
+        pts_per_head = rem_pts // len(surrounding_heads)
 
-        for bl in side_blooms:
+        for bl in surrounding_heads:
             fcx = bl["cx"]
             fcy = bl["cy"]
             fcz = bl["cz"]
             frad = bl["rad"]
             ftype = bl["type"]
             
-            for i in range(pts_per_bloom):
+            for i in range(pts_per_head):
                 if ftype in ["rose", "peony"]:
-                    frac = i / (pts_per_bloom - 1)
+                    frac = i / (pts_per_head - 1)
                     r = math.sqrt(frac) * frad
                     theta = i * GOLDEN_ANGLE
                     r_scallop = r * (1.0 + 0.12 * math.sin(7.0 * theta))
                     
                     px = fcx + math.cos(theta) * r_scallop
                     py = fcy + math.sin(theta) * r_scallop
-                    pz = fcz - math.cos(frac * math.pi * 0.5) * (frad * 0.42)
+                    pz = fcz - math.cos(frac * math.pi * 0.5) * (frad * 0.44)
                     
-                    if frac < 0.30:
+                    if frac < 0.28:
                         col = bl["col_core"]
                         ch = rng.choice(["@", "#", "♥"])
-                    elif frac < 0.75:
+                    elif frac < 0.74:
                         col = bl["col_mid"]
                         ch = rng.choice(["%", "&", "8", "♥", "✿"])
                     else:
@@ -559,11 +523,17 @@ class Bouquet3D:
                 glyphs_list.append(ch)
                 colors_list.append(col)
 
+        # 5. Baby's Breath Star Constellations (Fills remaining gaps with delicate stars)
         while len(pts_list) < self.total_points:
-            pts_list.append([0.0, 0.0, 0.0])
-            glyphs_list.append("*")
-            colors_list.append(COL_WHITE_SPARK)
-            
+            ang = rng.uniform(0, 2 * math.pi)
+            rad = rng.uniform(40.0, 170.0)
+            px = math.cos(ang) * rad
+            py = -70.0 + math.sin(ang) * rad * 0.8
+            pz = rng.uniform(-60.0, 40.0)
+            pts_list.append([px, py, pz])
+            glyphs_list.append(rng.choice(["*", "·", "+", "°", "✧"]))
+            colors_list.append(rng.choice([COL_BABY_BREATH, COL_WHITE_SPARK, COL_GOLD_SPARK]))
+
         self.points_3d = np.array(pts_list[:self.total_points], dtype=np.float32)
         self.glyphs = glyphs_list[:self.total_points]
         self.colors = colors_list[:self.total_points]
@@ -612,16 +582,13 @@ def main():
     font_mono_lg = pygame.font.SysFont(["consolas", "couriernew", "monospace"], 14, bold=True)
     font_mono_md = pygame.font.SysFont(["consolas", "couriernew", "monospace"], 12, bold=True)
     font_mono_sm = pygame.font.SysFont(["consolas", "couriernew", "monospace"], 10, bold=True)
-    
-    font_hud = pygame.font.SysFont(["consolas", "sans-serif"], 13, bold=True)
-    font_btn = pygame.font.SysFont(["consolas", "sans-serif"], 16, bold=True)
+    font_btn = pygame.font.SysFont(["consolas", "couriernew", "monospace"], 14, bold=True)
 
-    # 1. Models & Widgets
+    # 1. Models & Replay Button
     envelope = Envelope3D(width=750.0, height=445.0)
     total_pts = len(envelope.all_envelope_points)
     bouquet = Bouquet3D(total_points=total_pts)
-    gizmo = AxisGizmo(axis_length=120.0)
-    replay_btn = ReplayButton(x=45, y=WINDOW_HEIGHT - 70, w=160, h=44)
+    replay_btn = AsciiReplayButton(x=45, y=WINDOW_HEIGHT - 85)
 
     env_coords_initial = envelope.get_3d_coordinates(flap_angle=0.0)
     bouquet_target_3d = bouquet.points_3d.copy()
@@ -654,7 +621,7 @@ def main():
 
     is_dragging = False
     last_mouse_pos = (0, 0)
-    has_dragged = False  # Track if click was drag or tap
+    has_dragged = False
 
     # States
     STATE_WAITING = 0
@@ -675,7 +642,6 @@ def main():
         center_screen = (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
         mouse_pos = pygame.mouse.get_pos()
 
-        # Update replay button hover state
         if state == STATE_BOUQUET:
             replay_btn.update(mouse_pos)
 
@@ -703,7 +669,6 @@ def main():
                     
                     # Check Replay Button on Bouquet Screen
                     if state == STATE_BOUQUET and replay_btn.rect.collidepoint(event.pos):
-                        # ONLY the replay button resets!
                         state = STATE_WAITING
                         state_start_time = now
                         flap_angle = 0.0
@@ -859,7 +824,6 @@ def main():
                 state_start_time = now
 
         elif state == STATE_BOUQUET:
-            # 3D Turntable Auto-rotation
             turntable_yaw = cam_yaw + math.sin(time_in_state * 0.45) * 0.22
             turntable_pitch = cam_pitch + math.cos(time_in_state * 0.35) * 0.08
             R_cam = create_rotation_matrix(turntable_pitch, turntable_yaw)
@@ -883,16 +847,12 @@ def main():
                 ))
 
         # ----------------------------------------------------------------------
-        # 3D PROJECTION & RENDERING (Depth-Sorted)
+        # 3D PROJECTION & RENDERING (Depth-Sorted, No Axes)
         # ----------------------------------------------------------------------
         sx, sy, z_safe, scale, depth_order = project_points_3d(
             current_3d, R_cam, cam_dist, FOV, center_screen
         )
 
-        # 1. Draw 3D Origin Axes (Red=X, Green=Y, Blue=Z)
-        gizmo.draw_origin_axes(screen, font_hud, R_cam, cam_dist, FOV, center_screen)
-
-        # 2. Draw Points in Back-to-Front Depth Order
         for idx in depth_order:
             x_screen = sx[idx]
             y_screen = sy[idx]
@@ -942,32 +902,11 @@ def main():
         particles_3d = alive_p
 
         # ----------------------------------------------------------------------
-        # 3D HUD & WIDGETS
+        # HUD / REPLAY ICON (No Text Lines, No XYZ Radar)
         # ----------------------------------------------------------------------
-        # Corner 3D Orientation Gizmo (Top-Right)
-        gizmo.draw_corner_hud(screen, font_hud, R_cam, corner_pos=(WINDOW_WIDTH - 65, 65))
-
-        if state == STATE_WAITING:
-            # Click prompt
-            prompt_alpha = (math.sin(now * 4.0) + 1.0) / 2.0
-            p_col = (
-                int(255 * (0.6 + 0.4 * prompt_alpha)),
-                int(220 * (0.6 + 0.4 * prompt_alpha)),
-                int(160 * (0.6 + 0.4 * prompt_alpha))
-            )
-            p_surf = font_hud.render("💌  [ TAP / CLICK TO OPEN ]  •  [ DRAG TO ROTATE 3D ]", True, p_col)
-            p_rect = p_surf.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT - 45))
-            screen.blit(p_surf, p_rect)
-
-        elif state == STATE_BOUQUET:
-            # NO TEXT IN CENTER/BOTTOM (Removed per user request)
-            # Dedicated Replay Button at Bottom-Left
+        if state == STATE_BOUQUET:
+            # Pure ASCII / Typography Replay Icon button
             replay_btn.draw(screen, font_btn)
-
-            # Orbit guide hint next to button
-            guide_col = (140, 125, 160)
-            g_surf = font_hud.render("🖱️ Drag screen to orbit 3D bouquet  •  Scroll to zoom", True, guide_col)
-            screen.blit(g_surf, (replay_btn.rect.right + 20, replay_btn.rect.centery - 7))
 
         pygame.display.flip()
 
