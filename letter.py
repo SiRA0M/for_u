@@ -7,15 +7,15 @@ import pygame
 # ==============================================================================
 # CONFIGURATION & CONSTANTS
 # ==============================================================================
-TITLE = "Special Letter 💌 Single Rose"
+TITLE = "Special Letter 💌 Stargazer Lilies"
 WINDOW_WIDTH = 1050
-WINDOW_HEIGHT = 850
+WINDOW_HEIGHT = 880
 FPS = 60
 
 # ------------------------------------------------------------------------------
-# COLOR PALETTE (RGB)
+# COLOR PALETTE (RGB) - Matching exact photo colors
 # ------------------------------------------------------------------------------
-COLOR_BG = (10, 8, 16)
+COLOR_BG = (8, 6, 14)
 
 # Envelope Colors (Warm Peach / Sepia / Gold with Purple Rim)
 COL_BORDER = (248, 222, 205)
@@ -30,33 +30,55 @@ COL_SEAL_CORE = (255, 15, 105)
 COL_SEAL_OUTER = (210, 25, 88)
 COL_SEAL_SPECULAR = (255, 215, 240)
 
-# Single Rose Colors (Deep Velvet Crimson -> Radiant Pink -> Champagne)
-COL_ROSE_DEEP = (130, 8, 35)         # Center core
-COL_ROSE_VELVET = (195, 15, 50)      # Inner whorl
-COL_ROSE_RED = (235, 28, 68)         # Mid petals
-COL_ROSE_CORAL = (255, 88, 140)      # Flared petals
-COL_ROSE_CHAMPAGNE = (255, 200, 220)  # Petal edge tips
+# Lily Flower Specific Palettes (From user reference image)
+# 1. Red Stargazer (Top-Center)
+COL_RED_PETAL = (235, 42, 52)
+COL_RED_DARK = (160, 15, 28)
+COL_RED_HIGHLIGHT = (255, 95, 105)
 
-# Stem & Leaf Colors
-COL_STEM_DEEP = (32, 95, 45)
-COL_STEM_LIGHT = (62, 155, 78)
-COL_THORN = (130, 60, 50)
-COL_SEPAL = (45, 125, 60)
+# 2. Pink Lily (Mid-Left)
+COL_PINK_PETAL = (245, 100, 185)
+COL_PINK_DARK = (185, 35, 125)
+COL_PINK_LIGHT = (255, 170, 220)
 
-COL_LEAF_DARK = (42, 115, 55)
-COL_LEAF_MID = (68, 165, 85)
-COL_LEAF_BRIGHT = (105, 205, 125)
-COL_LEAF_VEIN = (145, 230, 160)
+# 3. White Lily (Mid-Right)
+COL_WHITE_PETAL = (255, 252, 248)
+COL_WHITE_SHADOW = (220, 225, 228)
+COL_WHITE_CORE = (185, 225, 140)  # Chartreuse lime throat
 
-# Sparkles & Dewdrops
-COL_GOLD_SPARK = (255, 235, 145)
-COL_WHITE_SPARK = (255, 255, 255)
-COL_DEW_GLOW = (220, 240, 255)
+# 4. Peach/Apricot Lily (Bottom-Center)
+COL_PEACH_PETAL = (255, 185, 135)
+COL_PEACH_DARK = (225, 130, 80)
+COL_PEACH_LIGHT = (255, 218, 175)
+
+# 5. Yellow Lilies (Left Flank)
+COL_YELLOW_PETAL = (255, 215, 45)
+COL_YELLOW_DARK = (215, 160, 20)
+COL_YELLOW_LIGHT = (255, 240, 120)
+
+# 6. Burgundy / Maroon Lilies (Right Flank)
+COL_WINE_PETAL = (180, 42, 78)
+COL_WINE_DARK = (120, 15, 45)
+COL_WINE_LIGHT = (215, 90, 125)
+
+# 7. Background Lilies (Top)
+COL_IVORY_PETAL = (240, 235, 220)
+COL_PALE_GOLD = (230, 200, 130)
+
+# Stems & Strappy Lily Leaves (Base)
+COL_LEAF_BRIGHT = (85, 210, 105)
+COL_LEAF_MID = (55, 175, 75)
+COL_LEAF_DARK = (30, 115, 48)
+
+# Center Stamens & Pollen Anthers
+COL_POLLEN_GOLD = (255, 235, 140)
+COL_POLLEN_BROWN = (140, 60, 30)
+COL_STARDUST = (255, 255, 255)
 
 # Character sets
 ASCII_CHARS_DENSE = ["8", "%", "&", "#", "S", "B", "w", "m", "Z", "X", "Q", "0"]
 ASCII_CHARS_MED = ["o", "*", "a", "s", "z", "x", "e", "u", "r", "n", "v"]
-SPARKLE_CHARS = ["*", "+", "·", "✧", "✦", "°", "•", "♡", "❀"]
+ASCII_LILY_PETAL = ["=", "-", "~", "#", "%", "8", "*", "+", "H", "M"]
 
 
 # ==============================================================================
@@ -113,7 +135,7 @@ class AsciiReplayButton:
 # 2D ENVELOPE GENERATOR (High-Detail Matching User Photo)
 # ==============================================================================
 class Envelope2D:
-    def __init__(self, cx, cy, width=750.0, height=445.0):
+    def __init__(self, cx, cy, width=760.0, height=450.0):
         self.cx = cx
         self.cy = cy
         self.w = width
@@ -150,7 +172,6 @@ class Envelope2D:
                 top_flap_crease = abs(ny - (1.0 - dx) * 0.5) < 0.032 and ny <= 0.52
                 bot_flap_crease = abs((1.0 - ny) - (1.0 - dx) * 0.5) < 0.032 and ny >= 0.48
                 
-                # Wax Seal Math
                 seal_dx = (x - self.cx) / 36.0
                 seal_dy = (y - self.cy) / 32.0
                 sy = -seal_dy - 0.15
@@ -201,14 +222,11 @@ class Envelope2D:
                         b_c = int(b_c * (1 - p_factor * 0.4) + COL_GLOW_PURPLE[2] * p_factor * 0.4)
                     color = (r_c, g_c, b_c)
 
-                # Is point on top folding flap
                 is_flap = (ny < (1.0 - dx) * 0.5) and not is_top
                 
                 self.cells.append({
                     "x": x,
                     "y": y,
-                    "orig_x": x,
-                    "orig_y": y,
                     "char": char,
                     "color": color,
                     "is_seal": is_seal,
@@ -217,222 +235,220 @@ class Envelope2D:
 
 
 # ==============================================================================
-# GRAND SINGLE ROSE GENERATOR (2D With Botanical Details)
+# EXACT LILY BOUQUET GENERATOR (Matching User Reference Image)
 # ==============================================================================
-class SingleRose2D:
-    """Generates 2D coordinates for a grand single rose with head, stem, thorns & leaves."""
-    def __init__(self, cx, cy, total_points=2200):
+class LilyBouquet2D:
+    """Generates 2D points for the multi-colored 6-petal lily bouquet from reference photo."""
+    def __init__(self, cx, cy, total_points=2490):
         self.cx = cx
         self.cy = cy
         self.total_points = total_points
         self.points = []
-        self._generate_rose()
+        self._generate_lilies()
 
-    def _generate_rose(self):
-        rng = random.Random(404)
+    def _generate_lilies(self):
+        rng = random.Random(321)
         pts_list = []
 
         # ----------------------------------------------------------------------
-        # 1. STEM & THORNS (S-Curved Botanical Stem)
+        # 1. BASE STRAPPY LILY LEAVES (Dense Green Foliage at Bottom)
         # ----------------------------------------------------------------------
-        stem_top_y = self.cy - 15.0
-        stem_bot_y = self.cy + 270.0
-        num_stem = int(self.total_points * 0.14)
+        num_leaves = int(self.total_points * 0.16)
+        leaf_base_y = self.cy + 340.0
         
-        for _ in range(num_stem):
-            u = rng.uniform(0.0, 1.0)
-            y = stem_top_y + u * (stem_bot_y - stem_top_y)
-            # Gentle elegant S-curve formula
-            curve_x = math.sin(u * math.pi * 1.4) * 22.0 - (u * 12.0)
-            stem_cx = self.cx + curve_x
+        for _ in range(num_leaves):
+            u = rng.uniform(0.0, 1.0)  # 0 at bottom, 1 at top of foliage
+            # Leaves fan out slightly from center
+            fan_spread = rng.uniform(-140.0, 140.0)
+            leaf_x = self.cx + fan_spread * (0.4 + 0.6 * (1.0 - u))
+            leaf_y = leaf_base_y - u * 155.0 + rng.uniform(-6, 6)
             
-            # Stem thickness (wider at base)
-            thickness = 6.0 + (1.0 - u) * 4.0
-            x_off = rng.uniform(-thickness / 2.0, thickness / 2.0)
-            
-            col = COL_STEM_LIGHT if x_off > 0.5 else COL_STEM_DEEP
-            ch = rng.choice(["|", "!", ":", "#", "%"])
-            
+            # Shading
+            if u > 0.6:
+                col = rng.choice([COL_LEAF_BRIGHT, COL_LEAF_MID])
+                ch = rng.choice(["|", "!", "/", "\\", "%"])
+            else:
+                col = rng.choice([COL_LEAF_MID, COL_LEAF_DARK])
+                ch = rng.choice(["#", "%", "8", "|", ";"])
+                
             pts_list.append({
-                "base_x": stem_cx + x_off,
-                "base_y": y,
-                "part": "stem",
+                "base_x": leaf_x,
+                "base_y": leaf_y,
+                "part": "leaf",
                 "u": u,
                 "char": ch,
                 "color": col
             })
 
-        # Thorns along stem
-        thorn_configs = [
-            (0.35, -1, 14.0),  # (u_along_stem, direction_left_right, length)
-            (0.60, 1, 15.0),
-            (0.82, -1, 12.0),
+        # ----------------------------------------------------------------------
+        # 2. DEFINITION OF THE 10 LILIES (Positions, Radii, Palette from Photo)
+        # ----------------------------------------------------------------------
+        # Each lily has 6 pointed petals radiating from its center:
+        lily_specs = [
+            # Top-Center Fire Red Lily (The prominent red lily in photo)
+            {
+                "cx": self.cx, "cy": self.cy - 160.0, "rad": 115.0, "rot": 0.0,
+                "col_main": COL_RED_PETAL, "col_dark": COL_RED_DARK, "col_hi": COL_RED_HIGHLIGHT,
+                "priority": 4
+            },
+            # Mid-Left Vivid Pink Lily
+            {
+                "cx": self.cx - 85.0, "cy": self.cy - 20.0, "rad": 120.0, "rot": 0.35,
+                "col_main": COL_PINK_PETAL, "col_dark": COL_PINK_DARK, "col_hi": COL_PINK_LIGHT,
+                "priority": 5
+            },
+            # Mid-Right Pure White Lily (with soft green throat)
+            {
+                "cx": self.cx + 95.0, "cy": self.cy - 10.0, "rad": 125.0, "rot": -0.25,
+                "col_main": COL_WHITE_PETAL, "col_dark": COL_WHITE_SHADOW, "col_hi": COL_WHITE_PETAL,
+                "col_core": COL_WHITE_CORE,
+                "priority": 6
+            },
+            # Bottom-Center Peach/Apricot Lily
+            {
+                "cx": self.cx - 5.0, "cy": self.cy + 105.0, "rad": 115.0, "rot": 0.15,
+                "col_main": COL_PEACH_PETAL, "col_dark": COL_PEACH_DARK, "col_hi": COL_PEACH_LIGHT,
+                "priority": 7
+            },
+            # Mid-Left Golden Yellow Lily
+            {
+                "cx": self.cx - 145.0, "cy": self.cy - 85.0, "rad": 90.0, "rot": 0.52,
+                "col_main": COL_YELLOW_PETAL, "col_dark": COL_YELLOW_DARK, "col_hi": COL_YELLOW_LIGHT,
+                "priority": 2
+            },
+            # Lower-Left Golden Yellow Lily
+            {
+                "cx": self.cx - 155.0, "cy": self.cy + 95.0, "rad": 85.0, "rot": -0.40,
+                "col_main": COL_YELLOW_PETAL, "col_dark": COL_YELLOW_DARK, "col_hi": COL_YELLOW_LIGHT,
+                "priority": 3
+            },
+            # Mid-Right Burgundy / Plum Lily
+            {
+                "cx": self.cx + 140.0, "cy": self.cy - 100.0, "rad": 90.0, "rot": -0.50,
+                "col_main": COL_WINE_PETAL, "col_dark": COL_WINE_DARK, "col_hi": COL_WINE_LIGHT,
+                "priority": 2
+            },
+            # Lower-Right Deep Crimson / Maroon Lily
+            {
+                "cx": self.cx + 140.0, "cy": self.cy + 125.0, "rad": 80.0, "rot": 0.45,
+                "col_main": COL_RED_DARK, "col_dark": (120, 10, 25), "col_hi": COL_RED_PETAL,
+                "priority": 3
+            },
+            # Top-Left Background Ivory Lily
+            {
+                "cx": self.cx - 65.0, "cy": self.cy - 245.0, "rad": 75.0, "rot": 0.20,
+                "col_main": COL_IVORY_PETAL, "col_dark": (195, 190, 180), "col_hi": COL_WHITE_PETAL,
+                "priority": 1
+            },
+            # Top-Right Background Pale Gold Lily
+            {
+                "cx": self.cx + 60.0, "cy": self.cy - 245.0, "rad": 75.0, "rot": -0.20,
+                "col_main": COL_PALE_GOLD, "col_dark": (190, 155, 95), "col_hi": (255, 235, 175),
+                "priority": 1
+            },
         ]
-        num_thorns = int(self.total_points * 0.03)
-        for _ in range(num_thorns):
-            tc = rng.choice(thorn_configs)
-            tu, tdir, tlen = tc
-            ty = stem_top_y + tu * (stem_bot_y - stem_top_y)
-            curve_x = math.sin(tu * math.pi * 1.4) * 22.0 - (tu * 12.0)
-            stem_cx = self.cx + curve_x
-            
-            v = rng.uniform(0.1, 1.0)
-            tx = stem_cx + tdir * (5.0 + v * tlen)
-            py = ty + (v * v) * 7.0  # Curved downward hook of a thorn
-            
-            pts_list.append({
-                "base_x": tx,
-                "base_y": py,
-                "part": "thorn",
-                "u": tu,
-                "char": ">" if tdir > 0 else "<",
-                "color": COL_THORN
-            })
 
-        # ----------------------------------------------------------------------
-        # 2. GREEN SEPALS (Calyx Embracing Blossom Base)
-        # ----------------------------------------------------------------------
-        num_sepals = int(self.total_points * 0.06)
-        sepal_angles = [-1.3, -0.7, 0.0, 0.7, 1.3]
-        for _ in range(num_sepals):
-            sang = rng.choice(sepal_angles)
-            u = rng.uniform(0.1, 1.0)
-            slen = rng.uniform(22.0, 36.0)
-            swid = 8.0 * (1.0 - u)
-            
-            # Pointing downward and curling out
-            sx = self.cx + math.sin(sang) * (u * slen) + rng.uniform(-swid, swid)
-            sy = stem_top_y + math.cos(sang) * (u * slen * 0.7) + (u * 10.0)
-            
-            pts_list.append({
-                "base_x": sx,
-                "base_y": sy,
-                "part": "sepal",
-                "u": 0.05,
-                "char": rng.choice(["v", "V", "|", ";"]),
-                "color": COL_SEPAL
-            })
+        rem_pts = self.total_points - len(pts_list)
+        pts_per_lily = rem_pts // len(lily_specs)
 
-        # ----------------------------------------------------------------------
-        # 3. SERRATED ROSE LEAVES (Left & Right Branches)
-        # ----------------------------------------------------------------------
-        num_leaves = int(self.total_points * 0.22)
-        leaf_clusters = [
-            # (stem_u, angle_rad, length, width, side)
-            (0.38, -0.65, 95.0, 48.0, -1),  # Upper-left leaf branch
-            (0.58, 0.60, 100.0, 52.0, 1),   # Mid-right leaf branch
-            (0.78, -0.55, 80.0, 42.0, -1),  # Lower-left small leaf
-        ]
+        for l_spec in lily_specs:
+            lcx = l_spec["cx"]
+            lcy = l_spec["cy"]
+            lrad = l_spec["rad"]
+            lrot = l_spec["rot"]
+            c_main = l_spec["col_main"]
+            c_dark = l_spec["col_dark"]
+            c_hi = l_spec["col_hi"]
+            c_core = l_spec.get("col_core", None)
 
-        for _ in range(num_leaves):
-            lc = rng.choice(leaf_clusters)
-            lu, lang, llen, lwid, lside = lc
-            
-            # Anchor on stem
-            ly = stem_top_y + lu * (stem_bot_y - stem_top_y)
-            curve_x = math.sin(lu * math.pi * 1.4) * 22.0 - (lu * 12.0)
-            lx = self.cx + curve_x
-            
-            # Leaf profile (pointed oval)
-            u = rng.uniform(0.08, 1.0)
-            v = rng.uniform(-1.0, 1.0)
-            max_v = math.sin(u * math.pi) * (1.0 - 0.2 * u)
-            
-            if abs(v) <= max_v:
-                dist_along = u * llen
-                dist_across = v * lwid * 0.5
-                ca, sa = math.cos(lang), math.sin(lang)
+            # Generate 6 pointed lanceolate petals for this lily
+            for _ in range(pts_per_lily):
+                # Pick one of the 6 petals
+                petal_idx = rng.randint(0, 5)
+                base_angle = lrot + petal_idx * (2.0 * math.pi / 6.0)
                 
-                px = lx + ca * dist_along - sa * dist_across
-                py = ly + sa * dist_along + ca * dist_across
+                # Position along petal length: u from 0.0 (center) to 1.0 (tip)
+                u = math.sqrt(rng.uniform(0.01, 1.0))
+                # Lanceolate petal width profile: widest at u ~ 0.55
+                max_w = math.sin(u * math.pi) * (0.34 * lrad)
+                v = rng.uniform(-1.0, 1.0)
                 
-                # Vein vs blade color
-                if abs(v) < 0.12:
-                    col = COL_LEAF_VEIN
-                    ch = rng.choice(["|", "/", "-", "+"])
-                elif abs(v) > max_v * 0.8:
-                    col = COL_LEAF_DARK
-                    ch = rng.choice([">", "<", "*", ";"])
+                # Transverse coordinate inside petal
+                dist_along = u * lrad
+                dist_across = v * max_w
+                
+                ca, sa = math.cos(base_angle), math.sin(base_angle)
+                px = lcx + ca * dist_along - sa * dist_across
+                py = lcy + sa * dist_along + ca * dist_across
+                
+                # Central vein & stippled scanline texture like in reference photo
+                abs_v = abs(v)
+                if u < 0.18:
+                    # Center core / throat
+                    col = c_core if c_core else c_dark
+                    ch = rng.choice(["*", "o", "+", "·"])
+                elif abs_v < 0.12:
+                    # Center crease/vein of the petal
+                    col = c_dark
+                    ch = rng.choice(["-", "=", "|", ";"])
+                elif abs_v > 0.82:
+                    # Petal edge highlight
+                    col = c_hi
+                    ch = rng.choice(["-", "~", "=", "'"])
                 else:
-                    col = COL_LEAF_MID if rng.random() < 0.65 else COL_LEAF_BRIGHT
-                    ch = rng.choice(["%", "#", "8", "&", "s"])
-                
+                    # Petal body with horizontal/linear striations (like photo)
+                    col = c_main if rng.random() < 0.75 else c_hi
+                    ch = rng.choice(["=", "-", "#", "%", "H", "8"])
+
                 pts_list.append({
                     "base_x": px,
                     "base_y": py,
-                    "part": "leaf",
-                    "u": lu,
+                    "part": "lily",
+                    "lcx": lcx,
+                    "lcy": lcy,
+                    "u": u,
                     "char": ch,
                     "color": col
                 })
 
         # ----------------------------------------------------------------------
-        # 4. GRAND BLOOMING ROSE HEAD (Velveteen Spiral Phyllotaxis)
+        # 3. FILL REMAINING POINTS WITH LILY STAMENS / PARTICLES
         # ----------------------------------------------------------------------
-        head_cy = self.cy - 90.0
-        head_max_r = 115.0
-        GOLDEN_ANGLE = 137.507764 * (math.pi / 180.0)
-        
-        num_rose = self.total_points - len(pts_list)
-        for i in range(num_rose):
-            frac = i / (num_rose - 1)
-            r = math.sqrt(frac) * head_max_r
-            theta = i * GOLDEN_ANGLE
-            
-            # 5-lobed natural rose scalloping
-            scallop = 1.0 + 0.14 * math.sin(5.0 * theta)
-            r_mod = r * scallop
-            
-            px = self.cx + math.cos(theta) * r_mod
-            # Vertical foreshortening for natural 2D angle (slight upward tilt)
-            py = head_cy + math.sin(theta) * r_mod * 0.90
-            
-            # 5-Tier Velveteen Gradient
-            if frac < 0.15:
-                col = COL_ROSE_DEEP
-                ch = rng.choice(["@", "#", "♥"])
-            elif frac < 0.38:
-                col = COL_ROSE_VELVET
-                ch = rng.choice(["%", "&", "♥", "8"])
-            elif frac < 0.68:
-                col = COL_ROSE_RED
-                ch = rng.choice(["*", "✿", "%", "8"])
-            elif frac < 0.88:
-                col = COL_ROSE_CORAL
-                ch = rng.choice(["❀", "c", "o", "S"])
-            else:
-                col = COL_ROSE_CHAMPAGNE
-                ch = rng.choice(["*", "·", ")", "(", "'"])
-                
+        while len(pts_list) < self.total_points:
+            # Pick random prominent lily to add anthers / stamens
+            l_pick = rng.choice(lily_specs[:4])
+            stamen_ang = rng.uniform(0, 2 * math.pi)
+            stamen_r = rng.uniform(8.0, 32.0)
+            sx = l_pick["cx"] + math.cos(stamen_ang) * stamen_r
+            sy = l_pick["cy"] + math.sin(stamen_ang) * stamen_r
             pts_list.append({
-                "base_x": px,
-                "base_y": py,
-                "part": "head",
-                "u": 0.0,
-                "frac": frac,
-                "theta": theta,
-                "dist_r": r_mod,
-                "char": ch,
-                "color": col
+                "base_x": sx,
+                "base_y": sy,
+                "part": "stamen",
+                "lcx": l_pick["cx"],
+                "lcy": l_pick["cy"],
+                "u": 0.1,
+                "char": rng.choice(["*", "·", "•", "+"]),
+                "color": rng.choice([COL_POLLEN_GOLD, COL_POLLEN_BROWN])
             })
 
         self.points = pts_list
 
 
 # ==============================================================================
-# 2D FLOATING PARTICLES (Sparkles & Dewdrops)
+# 2D FLOATING PARTICLES (Sparkles & Stardust)
 # ==============================================================================
 class Particle2D:
     def __init__(self, x, y, kind="sparkle", color=None, vx=None, vy=None):
         self.x = x
         self.y = y
         self.kind = kind
-        self.char = random.choice(SPARKLE_CHARS) if kind == "sparkle" else random.choice(["♥", "❀", "·", "•"])
-        self.color = color or random.choice([COL_GOLD_SPARK, COL_WHITE_SPARK, COL_ROSE_CHAMPAGNE, COL_DEW_GLOW])
+        self.char = random.choice(ASCII_CHARS_MED) if kind == "star" else random.choice(["*", "·", "•", "✧", "+"])
+        self.color = color or random.choice([COL_POLLEN_GOLD, COL_STARDUST, COL_PEACH_LIGHT, COL_PINK_LIGHT])
         
-        self.vx = vx if vx is not None else random.uniform(-1.5, 1.5)
-        self.vy = vy if vy is not None else random.uniform(-2.5, -0.6)
-        self.lifespan = random.randint(45, 100)
+        self.vx = vx if vx is not None else random.uniform(-1.4, 1.4)
+        self.vy = vy if vy is not None else random.uniform(-2.2, -0.6)
+        self.lifespan = random.randint(45, 95)
         self.age = 0
         self.alive = True
         self.wobble_freq = random.uniform(2.0, 5.0)
@@ -464,16 +480,15 @@ def main():
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     clock = pygame.time.Clock()
 
-    # Monospace fonts
     font_mono = pygame.font.SysFont(["consolas", "couriernew", "monospace"], 13, bold=True)
     font_btn = pygame.font.SysFont(["consolas", "couriernew", "monospace"], 14, bold=True)
 
     # 1. Models
     center_x = WINDOW_WIDTH // 2
-    center_y = WINDOW_HEIGHT // 2
+    center_y = WINDOW_HEIGHT // 2 - 10
     envelope = Envelope2D(center_x, center_y, width=760.0, height=450.0)
     total_pts = len(envelope.cells)
-    rose = SingleRose2D(center_x, center_y, total_points=total_pts)
+    lilies = LilyBouquet2D(center_x, center_y, total_points=total_pts)
     replay_btn = AsciiReplayButton(x=45, y=WINDOW_HEIGHT - 95)
 
     # 2. Setup Morphing Pairs with Bezier Splines
@@ -488,7 +503,7 @@ def main():
     ctrl_points = []
     for i in range(total_pts):
         p0 = (sorted_cells[i]["x"], sorted_cells[i]["y"])
-        p2 = (rose.points[i]["base_x"], rose.points[i]["base_y"])
+        p2 = (lilies.points[i]["base_x"], lilies.points[i]["base_y"])
         mid_x = (p0[0] + p2[0]) * 0.5
         mid_y = (p0[1] + p2[1]) * 0.5
         dist = math.hypot(p2[0] - p0[0], p2[1] - p0[1])
@@ -503,7 +518,7 @@ def main():
     STATE_WAITING = 0
     STATE_OPENING = 1
     STATE_MORPHING = 2
-    STATE_ROSE = 3
+    STATE_LILIES = 3
 
     state = STATE_WAITING
     state_start_time = time.time()
@@ -516,7 +531,7 @@ def main():
         time_in_state = now - state_start_time
         mouse_pos = pygame.mouse.get_pos()
 
-        if state == STATE_ROSE:
+        if state == STATE_LILIES:
             replay_btn.update(mouse_pos)
 
         # ----------------------------------------------------------------------
@@ -536,14 +551,13 @@ def main():
 
             # MOUSE BUTTON DOWN / TOUCHSCREEN
             elif event.type in [pygame.MOUSEBUTTONDOWN, pygame.FINGERDOWN]:
-                is_click = True
                 click_pos = event.pos if event.type == pygame.MOUSEBUTTONDOWN else (int(event.x * WINDOW_WIDTH), int(event.y * WINDOW_HEIGHT))
                 
                 if state == STATE_WAITING:
                     state = STATE_OPENING
                     state_start_time = now
-                elif state == STATE_ROSE and replay_btn.rect.collidepoint(click_pos):
-                    # Only the ASCII replay icon resets
+                elif state == STATE_LILIES and replay_btn.rect.collidepoint(click_pos):
+                    # Pure ASCII replay icon resets
                     state = STATE_WAITING
                     state_start_time = now
                     particles.clear()
@@ -554,7 +568,6 @@ def main():
         screen.fill(COLOR_BG)
 
         if state == STATE_WAITING:
-            # Subtle breathing pulse on heart seal
             seal_pulse = 1.0 + 0.08 * math.sin(now * 5.0)
 
             for cell in envelope.cells:
@@ -572,29 +585,26 @@ def main():
                 t_surf = font_mono.render(ch, True, col)
                 screen.blit(t_surf, (int(cx), int(cy)))
 
-            # Ambient seal sparkles
             if random.random() < 0.22:
                 particles.append(Particle2D(
                     center_x + random.uniform(-35, 35),
                     center_y + random.uniform(-25, 25),
-                    kind="sparkle", color=COL_GOLD_SPARK
+                    kind="sparkle", color=COL_POLLEN_GOLD
                 ))
 
         elif state == STATE_OPENING:
-            # Flap opening burst
             if time_in_state < 0.06:
                 for _ in range(85):
                     ang = random.uniform(0, 2 * math.pi)
                     spd = random.uniform(4.0, 10.0)
                     particles.append(Particle2D(
                         center_x, center_y,
-                        kind=random.choice(["sparkle", "petal"]),
-                        color=random.choice([COL_SEAL_BRIGHT, COL_GOLD_SPARK, COL_WHITE_SPARK, COL_ROSE_CORAL]),
+                        kind=random.choice(["sparkle", "star"]),
+                        color=random.choice([COL_SEAL_BRIGHT, COL_POLLEN_GOLD, COL_STARDUST, COL_PINK_LIGHT]),
                         vx=math.cos(ang) * spd,
                         vy=math.sin(ang) * spd - 2.0
                     ))
 
-            # Vibrate slightly before morphing
             shake_x = random.uniform(-2.5, 2.5)
             shake_y = random.uniform(-2.5, 2.5)
             for cell in envelope.cells:
@@ -622,15 +632,15 @@ def main():
 
                 p0 = (sorted_cells[i]["x"], sorted_cells[i]["y"])
                 p1 = ctrl_points[i]
-                p2 = (rose.points[i]["base_x"], rose.points[i]["base_y"])
+                p2 = (lilies.points[i]["base_x"], lilies.points[i]["base_y"])
 
                 curr_x = inv * inv * p0[0] + 2.0 * inv * ease * p1[0] + ease * ease * p2[0]
                 curr_y = inv * inv * p0[1] + 2.0 * inv * ease * p1[1] + ease * ease * p2[1]
 
                 src_ch = sorted_cells[i]["char"]
                 src_col = sorted_cells[i]["color"]
-                dst_ch = rose.points[i]["char"]
-                dst_col = rose.points[i]["color"]
+                dst_ch = lilies.points[i]["char"]
+                dst_col = lilies.points[i]["color"]
 
                 if ease < 0.4:
                     ch, col = src_ch, src_col
@@ -650,64 +660,61 @@ def main():
             if random.random() < 0.5:
                 idx = random.randint(0, total_pts - 1)
                 particles.append(Particle2D(
-                    rose.points[idx]["base_x"], rose.points[idx]["base_y"],
-                    kind="sparkle", color=random.choice([COL_GOLD_SPARK, COL_ROSE_CORAL])
+                    lilies.points[idx]["base_x"], lilies.points[idx]["base_y"],
+                    kind="sparkle", color=random.choice([COL_POLLEN_GOLD, COL_PINK_PETAL, COL_STARDUST])
                 ))
 
             if raw_t >= 1.0:
-                state = STATE_ROSE
+                state = STATE_LILIES
                 state_start_time = now
 
-        elif state == STATE_ROSE:
+        elif state == STATE_LILIES:
             # ------------------------------------------------------------------
-            # ORGANIC FLOWER MOTION (Living 2D Rose Dynamics)
+            # LIVING BOTANICAL MOTION (Breeze Sway + Petal Breathing)
             # ------------------------------------------------------------------
-            # 1. Gentle wind sway along stem height
-            stem_base_y = center_y + 270.0
-            stem_top_y = center_y - 15.0
-            total_stem_h = stem_base_y - stem_top_y
+            # Gentle overall breeze sway
+            breeze_x = math.sin(now * 1.8) * 6.0
             
-            # 2. Breathing Bloom (Petals breathe subtly in and out)
-            bloom_pulse = 1.0 + 0.035 * math.sin(now * 2.2)
-            head_cy = center_y - 90.0
+            # Breathing pulse for lilies
+            petal_pulse = 1.0 + 0.025 * math.sin(now * 2.4)
 
-            for pt in rose.points:
+            for pt in lilies.points:
                 bx = pt["base_x"]
                 by = pt["base_y"]
                 part = pt["part"]
                 ch = pt["char"]
                 col = pt["color"]
 
-                # Sway calculation: fixed at stem bottom, swaying more towards top
-                h_factor = max(0.0, min(1.0, (stem_base_y - by) / (total_stem_h + 100.0)))
-                sway_offset_x = math.sin(now * 1.8 + by * 0.006) * (18.0 * (h_factor ** 1.8))
-
-                if part == "head":
-                    # Head sways with top of stem and breathes organically
-                    dx = bx - center_x
-                    dy = by - head_cy
-                    render_x = center_x + dx * bloom_pulse + sway_offset_x
-                    render_y = head_cy + dy * bloom_pulse
-                elif part in ["leaf", "stem", "thorn", "sepal"]:
-                    render_x = bx + sway_offset_x
-                    render_y = by
+                # Foliage base vs flower head motion
+                if part in ["lily", "stamen"]:
+                    lcx = pt["lcx"]
+                    lcy = pt["lcy"]
+                    # Expand petals slightly from each lily center
+                    dx = bx - lcx
+                    dy = by - lcy
+                    rx = lcx + dx * petal_pulse + breeze_x * 0.8
+                    ry = lcy + dy * petal_pulse + math.sin(now * 2.0 + lcx * 0.01) * 2.0
+                else:
+                    # Leaf base fixed, upper leaf sways with breeze
+                    u = pt.get("u", 0.5)
+                    rx = bx + breeze_x * (1.0 - u * 0.5)
+                    ry = by
 
                 t_surf = font_mono.render(ch, True, col)
-                screen.blit(t_surf, (int(render_x), int(render_y)))
+                screen.blit(t_surf, (int(rx), int(ry)))
 
-            # Ambient rising dew sparkles and soft floral glow
-            if random.random() < 0.32:
-                # Spawn near rose head or leaves
-                rx = center_x + random.uniform(-110, 110)
-                ry = head_cy + random.uniform(-90, 120)
+            # Ambient stardust sparkles drifting around the bouquet (as seen in photo)
+            if random.random() < 0.35:
+                sx = center_x + random.uniform(-220, 220)
+                sy = center_y + random.uniform(-250, 200)
                 particles.append(Particle2D(
-                    rx, ry,
-                    kind=random.choice(["sparkle", "petal"]),
-                    color=random.choice([COL_ROSE_CHAMPAGNE, COL_GOLD_SPARK, COL_WHITE_SPARK, COL_DEW_GLOW]),
-                    vy=random.uniform(-2.2, -0.6)
+                    sx, sy,
+                    kind="sparkle",
+                    color=random.choice([COL_STARDUST, COL_POLLEN_GOLD, COL_PEACH_LIGHT, COL_WHITE_PETAL]),
+                    vy=random.uniform(-1.8, -0.5)
                 ))
 
-            # Draw ASCII Replay Icon (Pure Typography, No Text Lines)
+            # ASCII Replay Icon Button at bottom-left
             replay_btn.draw(screen, font_btn)
 
         # ----------------------------------------------------------------------
