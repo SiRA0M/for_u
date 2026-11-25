@@ -1,31 +1,27 @@
-# For You — Interactive Special Letter to Flower Bouquet 💌💐
+# Special Letter 3D — Interactive ASCII to Flower Bouquet 💌💐
 
-Animated high-density ASCII & Procedural Typography project in Python (`pygame-ce`), featuring user touch/click interaction and a seamless morphing transition into a lush flower bouquet.
+Animated 3D Volumetric ASCII & Procedural Typography project in Python (`pygame-ce` + `numpy`), featuring 3D perspective projection, interactive 3D orbit camera controls, touchscreen/mouse interaction, and a seamless 3D spline morphing transition into a lush 3D flower bouquet.
 
-## Features
-- **High-Detail ASCII Envelope**:
-  - Slanted hatch borders (`/ / / /`) on top and bottom.
-  - Over 2,300 dense textured ASCII glyphs mimicking real woven letter paper.
-  - Accurate diagonal crease folds leading to a center heart-shaped wax seal.
-  - Warm sepia/peach shading with subtle purple rim lighting.
-  - Pulsing magenta heart wax seal (`♥`, `@`, `#`) that reacts to mouse hover and touch.
-- **Interactive User Control**:
-  - Touchscreen tap (`pygame.FINGERDOWN`) or Mouse click (`pygame.MOUSEBUTTONDOWN`) to open the letter.
-  - Fallback keyboard controls (`SPACE` or `ENTER`).
-- **Smooth Spline Transition**:
-  - Quadratic Bezier curves with non-linear easing and radial delay waves.
-  - Burst of golden and rose particles as the seal breaks open.
-  - Characters fluidly transform from envelope cells into blooming flower petals.
-- **Detailed Botanical Flower Bouquet**:
-  - Central multi-layered grand rose with spiraling petal geometry.
-  - Soft lilac peonies, coral tulip buds, and white daisies with golden stamens.
-  - Rich foliage with emerald leaves, eucalyptus sprigs, and stems.
-  - Kraft paper conical wrapper tied with a satin ribbon bow.
-- **Ambient Life & Typography**:
-  - Gentle breeze oscillation swaying the bouquet.
-  - Floating petals and twinkling sparkles rising upwards.
-  - Fading in elegant typewriter message: *"For Someone Special 💐"*.
-  - Tap / Click anywhere to replay anytime.
+## 3D Features
+- **True 3D Spatial Envelope**:
+  - Positioned in 3D space with natural perspective depth and tilted aesthetic view.
+  - High-density ASCII paper texture (over 2,180 points) with slanted hatch borders.
+  - Flap physically hinges and folds open 180° in 3D space along its top axis.
+  - Pulsing magenta heart wax seal elevated in 3D ($Z$).
+- **Interactive 3D Camera (Orbit & Zoom)**:
+  - **Click / Touch & Drag**: Rotate camera around Pitch and Yaw to view the envelope and bouquet from any 3D angle.
+  - **Scroll Wheel**: Zoom camera in and out in 3D space.
+  - **Click / Tap**: Open the envelope (or replay after bouquet forms).
+- **3D Spline Transition (Quadratic Bezier in $\mathbb{R}^3$)**:
+  - On opening, seal shatters with a 3D spherical particle burst ($vx, vy, vz$).
+  - Points lift off the 2D surface and travel through 3D space along curved Bezier trajectories with radial wave delays.
+- **Volumetric 3D Flower Bouquet**:
+  - **3D Kraft Paper Wrapper**: Conical volume in 3D space.
+  - **3D Satin Ribbon**: Torus loops and tails wrapping around bouquet waist.
+  - **3D Leaves & Stems**: Eucalyptus and fern leaves curving outward in 3D hemispheres.
+  - **3D Blooms**: Central layered 3D rose, side peonies, tulips, and daisies arranged with 3D dome curvature.
+  - **3D Depth Fog & Perspective Sizing**: Far glyphs attenuate in brightness and scale dynamically based on $Z$-depth.
+  - **Ambient Life**: 3D turntable rotation, gentle wind sway, and 3D floating rose petals/pollen sparkles.
 
 ## Requirements
 ```bash
@@ -38,6 +34,8 @@ python letter.py
 ```
 
 ## Controls
-- **Click / Tap screen**: Open envelope (or replay after bouquet forms).
+- **Left Click / Touch Tap**: Open letter / Replay.
+- **Mouse / Touch Drag**: Orbit camera in 3D space (360° rotation).
+- **Mouse Scroll**: Zoom in / out.
 - **SPACE / ENTER**: Keyboard trigger to open or restart.
-- **ESC**: Close application window.
+- **ESC**: Exit window.
