@@ -87,26 +87,27 @@ class AsciiReplayButton:
 
 
 # ==============================================================================
-# ASCII TYPOGRAPHY BANNER: "For Per"
+# ASCII TYPOGRAPHY BANNER: "For Per" (Large Bold Monospace Font)
 # ==============================================================================
 ASCII_FOR_PER = [
-    r"  _____             ____            ",
-    r" |  ___|___  _ __  |  _ \ ___ _ __  ",
-    r" | |_ / _ \| '__| | |_) / _ \ '__| ",
-    r" |  _| (_) | |    |  __/  __/ |    ",
-    r" |_|  \___/|_|    |_|   \___|_|    ",
+    r"  ______              _____             ",
+    r" |  ____|            |  __ \            ",
+    r" | |__ ___  _ __     | |__) |__ _ __    ",
+    r" |  __/ _ \| '__|    |  ___/ _ \ '__|   ",
+    r" | | | (_) | |       | |  |  __/ |      ",
+    r" |_|  \___/|_|       |_|   \___|_|      ",
 ]
 
 def draw_ascii_for_per(surface, font, center_x, bottom_y, now, fade=1.0):
-    char_w = 9.5
-    char_h = 14.5
+    char_w, char_h = font.size("M")
+    char_h = max(char_h, 19)
     total_w = len(ASCII_FOR_PER[0]) * char_w
     start_x = center_x - total_w / 2.0
     start_y = bottom_y - (len(ASCII_FOR_PER) * char_h)
 
     pulse = (math.sin(now * 2.5) + 1.0) / 2.0
     r_c = int((245 + 10 * pulse) * fade)
-    g_c = int((120 + 40 * pulse) * fade)
+    g_c = int((115 + 40 * pulse) * fade)
     b_c = int((160 + 50 * pulse) * fade)
     color = (r_c, g_c, b_c)
 
@@ -392,9 +393,12 @@ class Bloom3DRenderer:
         n /= np.linalg.norm(n, axis=-1, keepdims=True)
         return pts, n
 
-    def _rasterize(self, t):
-        pp, pn, pdelay = self._petals(t)
-        cp, cn = self._centre(t)
+    def _rasterize(self, t, t_rot=None):
+        if t_rot is None:
+            t_rot = t
+        t_growth = min(6.0, t)
+        pp, pn, pdelay = self._petals(t_growth)
+        cp, cn = self._centre(t_growth)
         pos = np.concatenate([pp, cp])
         nrm = np.concatenate([pn, cn])
         col = np.concatenate([self.PCOL, self.C_COL])
@@ -403,18 +407,18 @@ class Bloom3DRenderer:
         ao = np.concatenate([self.AO, np.ones(self.NC)])
         pid = np.concatenate([self.PID, self.C_PID])
 
-        s = self._ss(0.9, 2.6, t) * (1 + 0.02 * math.sin(2 * math.pi * (t - 6) / 2.4) * self._ss(6, 6.8, t))
+        s = self._ss(0.9, 2.6, t_growth) * (1 + 0.02 * math.sin(t_rot * 2.2))
         if s <= 0:
             return None
         pos = pos * s
 
-        yaw = 0.4 + 0.32 * t
+        yaw = 0.4 + 0.35 * t_rot
         cy_, sy_ = math.cos(yaw), math.sin(yaw)
         rot = np.array([[cy_, -sy_, 0], [sy_, cy_, 0], [0, 0, 1]])
         pos = pos @ rot.T
         nrm = nrm @ rot.T
 
-        tau = np.maximum(0.0, t - delay)
+        tau = np.maximum(0.0, t_growth - delay)
         brk = np.maximum(0.0, tau - 0.3)
         pos = pos + self.WIND * (tau ** 2)[:, None] * 1.5 + jit * (brk ** 1.5 * 0.9)[:, None]
         pos[:, 2] += 0.1 * np.sin(tau * 5 + pid % 7) * brk
@@ -470,13 +474,13 @@ class Bloom3DRenderer:
         ech = np.select([(a < 22.5) | (a >= 157.5), a < 67.5, a < 112.5], ["-", "/", "|"], "\\")
         return edge, ech
 
-    def render(self, surface, t):
+    def render(self, surface, t, t_rot=None):
         if t < self.last_t:
             self.first_on[:] = np.inf
         self.last_t = t
 
         blits = []
-        res = self._rasterize(t)
+        res = self._rasterize(t, t_rot=t_rot)
         if res is not None:
             Lg, Cg, Dg, Fg, Pg = res
             filled = Lg > 0.03
@@ -566,6 +570,7 @@ def main():
 
     font_mono = pygame.font.SysFont(["consolas", "couriernew", "monospace"], 13, bold=True)
     font_btn = pygame.font.SysFont(["consolas", "couriernew", "monospace"], 14, bold=True)
+    font_banner = pygame.font.SysFont(["consolas", "couriernew", "monospace"], 17, bold=True)
 
     center_x = WINDOW_WIDTH // 2
     center_y = WINDOW_HEIGHT // 2 - 10
@@ -662,8 +667,6 @@ def main():
                     color=COL_POLLEN_GOLD,
                 ))
 
-            draw_ascii_for_per(screen, font_mono, center_x, WINDOW_HEIGHT - 35, now, fade=0.85)
-
         elif state == STATE_OPENING:
             if time_in_state < 0.06:
                 for _ in range(85):
@@ -725,15 +728,12 @@ def main():
                 state_start_time = now
 
         elif state == STATE_BLOOM:
-            # Continue seamlessly from bloom_t = 1.89 across 10s loop
-            t_bloom = 1.89 + time_in_state
-            if t_bloom >= Bloom3DRenderer.DURATION:
-                # Loop smoothly from t=1.2s (blooming again)
-                t_bloom = 1.2 + (t_bloom - Bloom3DRenderer.DURATION) % (Bloom3DRenderer.DURATION - 1.2)
-            bloom.render(screen, t_bloom)
+            t_growth = min(6.0, 1.89 + time_in_state * 1.5)
+            t_rot = 1.89 + time_in_state * 0.95
+            bloom.render(screen, t_growth, t_rot=t_rot)
             replay_btn.draw(screen, font_btn)
-            fade = min(1.0, time_in_state / 1.5)
-            draw_ascii_for_per(screen, font_mono, center_x, WINDOW_HEIGHT - 35, now, fade=fade)
+            fade = min(1.0, time_in_state / 1.2)
+            draw_ascii_for_per(screen, font_banner, center_x, WINDOW_HEIGHT - 22, now, fade=fade)
 
         # Render 2D particles
         alive_p = []
