@@ -570,7 +570,6 @@ def main():
 
     font_mono = pygame.font.SysFont(["consolas", "couriernew", "monospace"], 13, bold=True)
     font_btn = pygame.font.SysFont(["consolas", "couriernew", "monospace"], 14, bold=True)
-    font_banner = pygame.font.SysFont(["consolas", "couriernew", "monospace"], 17, bold=True)
 
     center_x = WINDOW_WIDTH // 2
     center_y = WINDOW_HEIGHT // 2 - 10
@@ -732,8 +731,6 @@ def main():
             t_rot = 1.89 + time_in_state * 0.95
             bloom.render(screen, t_growth, t_rot=t_rot)
             replay_btn.draw(screen, font_btn)
-            fade = min(1.0, time_in_state / 1.2)
-            draw_ascii_for_per(screen, font_banner, center_x, WINDOW_HEIGHT - 22, now, fade=fade)
 
         # Render 2D particles
         alive_p = []
