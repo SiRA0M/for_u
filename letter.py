@@ -87,37 +87,153 @@ class AsciiReplayButton:
 
 
 # ==============================================================================
-# ASCII TYPOGRAPHY BANNER: "For Per" (Large Bold Monospace Font)
+# BOTANICAL STEM & LEAVES (Original 2D Style with Botanical Motion)
 # ==============================================================================
-ASCII_FOR_PER = [
-    r"  ______              _____             ",
-    r" |  ____|            |  __ \            ",
-    r" | |__ ___  _ __     | |__) |__ _ __    ",
-    r" |  __/ _ \| '__|    |  ___/ _ \ '__|   ",
-    r" | | | (_) | |       | |  |  __/ |      ",
-    r" |_|  \___/|_|       |_|   \___|_|      ",
-]
+COL_STEM_DEEP = (28, 85, 40)
+COL_STEM_LIGHT = (58, 150, 72)
+COL_THORN = (130, 55, 45)
+COL_SEPAL = (42, 120, 55)
 
-def draw_ascii_for_per(surface, font, center_x, bottom_y, now, fade=1.0):
-    char_w, char_h = font.size("M")
-    char_h = max(char_h, 19)
-    total_w = len(ASCII_FOR_PER[0]) * char_w
-    start_x = center_x - total_w / 2.0
-    start_y = bottom_y - (len(ASCII_FOR_PER) * char_h)
+COL_LEAF_DARK = (38, 105, 50)
+COL_LEAF_MID = (62, 160, 80)
+COL_LEAF_BRIGHT = (100, 200, 120)
+COL_LEAF_VEIN = (140, 225, 155)
 
-    pulse = (math.sin(now * 2.5) + 1.0) / 2.0
-    r_c = int((245 + 10 * pulse) * fade)
-    g_c = int((115 + 40 * pulse) * fade)
-    b_c = int((160 + 50 * pulse) * fade)
-    color = (r_c, g_c, b_c)
+class BotanicalStemLeaves2D:
+    """Generates botanical stem, thorns, calyx sepals and serrated leaves."""
+    def __init__(self, cx, stem_top_y, stem_bot_y, total_points=1800):
+        self.cx = cx
+        self.stem_top_y = stem_top_y
+        self.stem_bot_y = stem_bot_y
+        self.total_points = total_points
+        self.points = []
+        self._generate()
 
-    for r_idx, line in enumerate(ASCII_FOR_PER):
-        py = start_y + r_idx * char_h
-        for c_idx, ch in enumerate(line):
-            if ch != " ":
-                px = start_x + c_idx * char_w
-                t_surf = font.render(ch, True, color)
-                surface.blit(t_surf, (int(px), int(py)))
+    def _generate(self):
+        rng = random.Random(404)
+        pts_list = []
+
+        # 1. Botanical S-Curved Stem
+        num_stem = int(self.total_points * 0.30)
+        for _ in range(num_stem):
+            u = rng.uniform(0.0, 1.0)
+            y = self.stem_top_y + u * (self.stem_bot_y - self.stem_top_y)
+            curve_x = math.sin(u * math.pi * 1.3) * 20.0 - (u * 10.0)
+            stem_cx = self.cx + curve_x
+            thickness = 6.0 + (1.0 - u) * 4.0
+            x_off = rng.uniform(-thickness / 2.0, thickness / 2.0)
+            col = COL_STEM_LIGHT if x_off > 0.5 else COL_STEM_DEEP
+            ch = rng.choice(["|", "!", ":", "#", "%"])
+            pts_list.append({
+                "base_x": stem_cx + x_off,
+                "base_y": y,
+                "part": "stem",
+                "u": u,
+                "char": ch,
+                "color": col
+            })
+
+        # 2. Thorns along stem
+        thorn_configs = [
+            (0.35, -1, 14.0),
+            (0.58, 1, 15.0),
+            (0.80, -1, 12.0),
+        ]
+        num_thorns = int(self.total_points * 0.05)
+        for _ in range(num_thorns):
+            tu, tdir, tlen = rng.choice(thorn_configs)
+            ty = self.stem_top_y + tu * (self.stem_bot_y - self.stem_top_y)
+            curve_x = math.sin(tu * math.pi * 1.3) * 20.0 - (tu * 10.0)
+            stem_cx = self.cx + curve_x
+            v = rng.uniform(0.1, 1.0)
+            tx = stem_cx + tdir * (5.0 + v * tlen)
+            py = ty + (v * v) * 7.0
+            pts_list.append({
+                "base_x": tx,
+                "base_y": py,
+                "part": "thorn",
+                "u": tu,
+                "char": ">" if tdir > 0 else "<",
+                "color": COL_THORN
+            })
+
+        # 3. Calyx Sepals (Embracing the base of the blossom)
+        num_sepals = int(self.total_points * 0.12)
+        sepal_angles = [-1.3, -0.7, -0.2, 0.2, 0.7, 1.3]
+        for _ in range(num_sepals):
+            sang = rng.choice(sepal_angles)
+            u = rng.uniform(0.1, 1.0)
+            slen = rng.uniform(25.0, 42.0)
+            swid = 8.0 * (1.0 - u)
+            sx = self.cx + math.sin(sang) * (u * slen) + rng.uniform(-swid, swid)
+            sy = self.stem_top_y + math.cos(sang) * (u * slen * 0.7) + (u * 6.0) - 15.0
+            pts_list.append({
+                "base_x": sx,
+                "base_y": sy,
+                "part": "sepal",
+                "u": 0.02,
+                "char": rng.choice(["v", "V", "|", ";"]),
+                "color": COL_SEPAL
+            })
+
+        # 4. Serrated Rose Leaves (Left & Right Branches)
+        leaf_clusters = [
+            (0.35, -0.35, 120.0, 68.0, -1),  # Upper-left
+            (0.55, -0.30, 125.0, 70.0, 1),   # Mid-right
+            (0.75, -0.25, 100.0, 58.0, -1),  # Lower-left
+        ]
+        pts_per_leaf = int(self.total_points * 0.53) // len(leaf_clusters)
+        for lu, lang, llen, lwid, lside in leaf_clusters:
+            ly = self.stem_top_y + lu * (self.stem_bot_y - self.stem_top_y)
+            curve_x = math.sin(lu * math.pi * 1.3) * 20.0 - (lu * 10.0)
+            lx = self.cx + curve_x
+            ca, sa = math.cos(lang), math.sin(lang)
+
+            for _ in range(pts_per_leaf):
+                u = rng.uniform(0.08, 1.0)
+                max_v = math.sin(u * math.pi) * (1.0 - 0.15 * u)
+                v = rng.uniform(-max_v, max_v)
+
+                dist_along = u * llen
+                dist_across = v * lwid * 0.5
+
+                vx = ca * dist_along - sa * dist_across
+                vy = sa * dist_along + ca * dist_across * 0.4
+                px = lx + lside * vx
+                py = ly + vy
+
+                if abs(v) < 0.12:
+                    col = COL_LEAF_VEIN
+                    ch = rng.choice(["|", "/", "-", "+"])
+                elif abs(v) > max_v * 0.82:
+                    col = COL_LEAF_DARK
+                    ch = rng.choice([">", "<", "*", ";"])
+                else:
+                    col = COL_LEAF_MID if rng.random() < 0.65 else COL_LEAF_BRIGHT
+                    ch = rng.choice(["%", "#", "8", "&", "s"])
+
+                pts_list.append({
+                    "base_x": px,
+                    "base_y": py,
+                    "part": "leaf",
+                    "u": lu,
+                    "char": ch,
+                    "color": col
+                })
+
+        self.points = pts_list
+
+    def draw(self, surface, font, now, grow=1.0):
+        total_h = self.stem_bot_y - self.stem_top_y
+        for pt in self.points:
+            if pt["u"] > grow:
+                continue
+            by = pt["base_y"]
+            bx = pt["base_x"]
+            h_factor = max(0.0, min(1.0, (self.stem_bot_y - by) / (total_h + 1e-4)))
+            sway_x = math.sin(now * 1.8 + by * 0.005) * (14.0 * (h_factor ** 1.8))
+            t_surf = font.render(pt["char"], True, pt["color"])
+            surface.blit(t_surf, (int(bx + sway_x), int(by)))
 
 
 # ==============================================================================
@@ -244,7 +360,7 @@ class Bloom3DRenderer:
     def __init__(self, width, height):
         self.W = width
         self.H = height
-        self.CY = height * 0.55
+        self.CY = 360.0
 
         self.font = pygame.font.SysFont(
             "consolas,menlo,dejavusansmono,liberationmono,couriernew",
@@ -393,7 +509,7 @@ class Bloom3DRenderer:
         n /= np.linalg.norm(n, axis=-1, keepdims=True)
         return pts, n
 
-    def _rasterize(self, t, t_rot=None):
+    def _rasterize(self, t, t_rot=None, offset_x=0.0, offset_y=0.0):
         if t_rot is None:
             t_rot = t
         t_growth = min(6.0, t)
@@ -440,8 +556,8 @@ class Bloom3DRenderer:
         k = 5.0 / (5.0 - depth)
         sx = pos[:, 0] * k
         sy = (pos @ self.CAM_UP) * k
-        c = ((self.W / 2 + sx * self.SCALE) / self.cw).astype(int)
-        r = ((self.CY - sy * self.SCALE) / self.ch).astype(int)
+        c = ((self.W / 2 + sx * self.SCALE + offset_x) / self.cw).astype(int)
+        r = ((self.CY - sy * self.SCALE + offset_y) / self.ch).astype(int)
         ok = (c >= 0) & (c < self.COLS) & (r >= 0) & (r < self.ROWS) & (fade > 0)
         idx = np.nonzero(ok)[0]
         ids = r[idx] * self.COLS + c[idx]
@@ -474,13 +590,13 @@ class Bloom3DRenderer:
         ech = np.select([(a < 22.5) | (a >= 157.5), a < 67.5, a < 112.5], ["-", "/", "|"], "\\")
         return edge, ech
 
-    def render(self, surface, t, t_rot=None):
+    def render(self, surface, t, t_rot=None, offset_x=0.0, offset_y=0.0):
         if t < self.last_t:
             self.first_on[:] = np.inf
         self.last_t = t
 
         blits = []
-        res = self._rasterize(t, t_rot=t_rot)
+        res = self._rasterize(t, t_rot=t_rot, offset_x=offset_x, offset_y=offset_y)
         if res is not None:
             Lg, Cg, Dg, Fg, Pg = res
             filled = Lg > 0.03
@@ -575,6 +691,7 @@ def main():
     center_y = WINDOW_HEIGHT // 2 - 10
     envelope = Envelope2D(center_x, center_y, width=760.0, height=450.0)
     bloom = Bloom3DRenderer(WINDOW_WIDTH, WINDOW_HEIGHT)
+    stem = BotanicalStemLeaves2D(center_x, stem_top_y=455.0, stem_bot_y=830.0, total_points=1800)
     replay_btn = AsciiReplayButton(x=45, y=WINDOW_HEIGHT - 95)
 
     # Precompute radial swirl targets toward center for envelope dissolve
@@ -596,7 +713,7 @@ def main():
         rad = rng_ctrl.uniform(10.0, 95.0)
         morph_targets.append((
             center_x + math.cos(ang) * rad,
-            (WINDOW_HEIGHT * 0.55) + math.sin(ang) * rad * 0.7,
+            360.0 + math.sin(ang) * rad * 0.7,
         ))
 
     STATE_WAITING = 0
@@ -717,10 +834,14 @@ def main():
                 t_surf = font_mono.render(ch, True, col)
                 screen.blit(t_surf, (int(curr_x), int(curr_y)))
 
-            # Start growing Bloom3D smoothly at 50% of morph
+            # Start growing Bloom3D and botanical stem smoothly during morph
+            sway_top = math.sin(now * 1.8 + stem.stem_top_y * 0.005) * 14.0
             if raw_t > 0.45:
                 bloom_t = 0.9 + (raw_t - 0.45) * 1.8
-                bloom.render(screen, bloom_t)
+                bloom.render(screen, bloom_t, t_rot=bloom_t, offset_x=sway_top)
+            if raw_t > 0.50:
+                grow = (raw_t - 0.50) / 0.50
+                stem.draw(screen, font_mono, now, grow=grow)
 
             if raw_t >= 1.0:
                 state = STATE_BLOOM
@@ -729,8 +850,19 @@ def main():
         elif state == STATE_BLOOM:
             t_growth = min(6.0, 1.89 + time_in_state * 1.5)
             t_rot = 1.89 + time_in_state * 0.95
-            bloom.render(screen, t_growth, t_rot=t_rot)
+            sway_top = math.sin(now * 1.8 + stem.stem_top_y * 0.005) * 14.0
+            bloom.render(screen, t_growth, t_rot=t_rot, offset_x=sway_top)
+            stem.draw(screen, font_mono, now, grow=1.0)
             replay_btn.draw(screen, font_btn)
+
+            if random.random() < 0.28:
+                rx = center_x + sway_top + random.uniform(-140, 140)
+                ry = 360.0 + random.uniform(-120, 360)
+                particles.append(Particle2D(
+                    rx, ry,
+                    kind="sparkle",
+                    color=random.choice([COL_POLLEN_GOLD, COL_STARDUST, COL_LEAF_BRIGHT, COL_PINK_LIGHT])
+                ))
 
         # Render 2D particles
         alive_p = []
