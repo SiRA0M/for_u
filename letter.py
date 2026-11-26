@@ -13,7 +13,7 @@ WINDOW_WIDTH = 1050
 WINDOW_HEIGHT = 880
 FPS = 60
 
-COLOR_BG = (8, 6, 14)
+COLOR_BG = (0, 0, 0)
 
 # Envelope Colors
 COL_BORDER = (248, 222, 205)
@@ -84,6 +84,39 @@ class AsciiReplayButton:
                     color = col_accent if ch in ["<", "-"] else col_fg
                     t_surf = font.render(ch, True, color)
                     surface.blit(t_surf, (int(px), int(py)))
+
+
+# ==============================================================================
+# ASCII TYPOGRAPHY BANNER: "For Per"
+# ==============================================================================
+ASCII_FOR_PER = [
+    r"  _____             ____            ",
+    r" |  ___|___  _ __  |  _ \ ___ _ __  ",
+    r" | |_ / _ \| '__| | |_) / _ \ '__| ",
+    r" |  _| (_) | |    |  __/  __/ |    ",
+    r" |_|  \___/|_|    |_|   \___|_|    ",
+]
+
+def draw_ascii_for_per(surface, font, center_x, bottom_y, now, fade=1.0):
+    char_w = 9.5
+    char_h = 14.5
+    total_w = len(ASCII_FOR_PER[0]) * char_w
+    start_x = center_x - total_w / 2.0
+    start_y = bottom_y - (len(ASCII_FOR_PER) * char_h)
+
+    pulse = (math.sin(now * 2.5) + 1.0) / 2.0
+    r_c = int((245 + 10 * pulse) * fade)
+    g_c = int((120 + 40 * pulse) * fade)
+    b_c = int((160 + 50 * pulse) * fade)
+    color = (r_c, g_c, b_c)
+
+    for r_idx, line in enumerate(ASCII_FOR_PER):
+        py = start_y + r_idx * char_h
+        for c_idx, ch in enumerate(line):
+            if ch != " ":
+                px = start_x + c_idx * char_w
+                t_surf = font.render(ch, True, color)
+                surface.blit(t_surf, (int(px), int(py)))
 
 
 # ==============================================================================
@@ -194,7 +227,7 @@ class Bloom3DRenderer:
     FONT_SIZE = 10
     DURATION = 10.0
     BLOW_START = 7.6
-    MESSAGE = "let it bloom "
+    MESSAGE = "for per "
     RAMP = ".:;=+*xo%#&@"
     GLITCH = "01<>{}[]#$%&*+=?!ABXZ"
     ELEV = math.radians(55)
@@ -629,6 +662,8 @@ def main():
                     color=COL_POLLEN_GOLD,
                 ))
 
+            draw_ascii_for_per(screen, font_mono, center_x, WINDOW_HEIGHT - 35, now, fade=0.85)
+
         elif state == STATE_OPENING:
             if time_in_state < 0.06:
                 for _ in range(85):
@@ -697,6 +732,8 @@ def main():
                 t_bloom = 1.2 + (t_bloom - Bloom3DRenderer.DURATION) % (Bloom3DRenderer.DURATION - 1.2)
             bloom.render(screen, t_bloom)
             replay_btn.draw(screen, font_btn)
+            fade = min(1.0, time_in_state / 1.5)
+            draw_ascii_for_per(screen, font_mono, center_x, WINDOW_HEIGHT - 35, now, fade=fade)
 
         # Render 2D particles
         alive_p = []
