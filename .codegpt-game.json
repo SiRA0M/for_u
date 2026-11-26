@@ -1,0 +1,17 @@
+{
+  "name": "for_u",
+  "engine": "generic",
+  "launch": {
+    "cmd": "python",
+    "args": [
+      "letter.py"
+    ]
+  },
+  "log": {
+    "stdout": true
+  },
+  "sourceRoots": [
+    "."
+  ],
+  "ready": "pygame"
+}

@@ -1,0 +1,60 @@
+            # SOLID STAR LILY (matching reference): 6 petals radiating from
+            # the centre, filled on a fine grid, sub-sampled to the per-lily
+            # point budget so the flower looks dense but never overflows.
+            step = 5.5
+            candidates = []
+            for petal_idx in range(6):
+                base_angle = lrot + petal_idx * (2.0 * math.pi / 6.0)
+                ca, sa = math.cos(base_angle), math.sin(base_angle)
+                nr = max(2, int(lrad / step))
+                for ir in range(nr):
+                    u = (ir + 0.5) / nr
+                    width_scale = math.sin(min(1.0, u) * math.pi) ** 0.65
+                    half_w = 0.34 * lrad * width_scale
+                    nc = max(1, int(half_w * 2.0 / step))
+                    for ic in range(nc):
+                        v = (ic + 0.5) / nc * 2.0 - 1.0
+                        d_along = u * lrad + rng.uniform(-1.2, 1.2)
+                        d_across = v * half_w + rng.uniform(-1.2, 1.2)
+                        px = lcx + ca * d_along - sa * d_across
+                        py = lcy + sa * d_along + ca * d_across
+
+                        abs_v = abs(v)
+                        if u < 0.22 and abs_v < 0.35:
+                            col = c_core if c_core else c_dark
+                            ch = rng.choice(["*", "o", "+", "·"])
+                        elif abs_v > 0.80:
+                            col = c_dark
+                            ch = rng.choice(["-", "~", "=", "'"])
+                        elif abs_v < 0.14:
+                            col = c_dark
+                            ch = rng.choice(["-", "=", "|", ";"])
+                        else:
+                            col = c_main if rng.random() < 0.82 else c_hi
+                            ch = rng.choice(["=", "=", "-", "~", "o"])
+
+                        candidates.append({
+                            "base_x": px,
+                            "base_y": py,
+                            "part": "lily",
+                            "lcx": lcx,
+                            "lcy": lcy,
+                            "u": u,
+                            "grow_delay": bloom_order,
+                            "char": ch,
+                            "color": col
+                        })
+
+            # take exactly the per-lily share (evenly sampled for coverage)
+            if candidates:
+                take = min(pts_per_lily, lily_budget, len(candidates))
+                if take > 0:
+                    pts_list.extend(rng.sample(candidates, take))
+                    lily_budget -= take
+
+        # Fill remaining budget with golden stamens at the flower cores
+        while len(pts_list) < self.total_points:
+            l_pick = rng.choice(lily_specs[:4])
+            stamen_ang = rng.uniform(0, 2 * math.pi)
+            stamen_r = rng.uniform(4.0, 26.0)
+            sx = l_pick["cx"] + math.cos(stamen_ang) * stamen_r
