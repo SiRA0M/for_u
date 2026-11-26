@@ -210,7 +210,7 @@ class Bloom3DRenderer:
     def __init__(self, width, height):
         self.W = width
         self.H = height
-        self.CY = 360.0
+        self.CY = self.H / 2.0
 
         self.font = pygame.font.SysFont(
             "consolas,menlo,dejavusansmono,liberationmono,couriernew",
@@ -562,7 +562,7 @@ def main():
         rad = rng_ctrl.uniform(10.0, 95.0)
         morph_targets.append((
             center_x + math.cos(ang) * rad,
-            360.0 + math.sin(ang) * rad * 0.7,
+            WINDOW_HEIGHT / 2.0 + math.sin(ang) * rad * 0.7,
         ))
 
     STATE_WAITING = 0
@@ -700,7 +700,7 @@ def main():
 
             if random.random() < 0.28:
                 rx = center_x + random.uniform(-140, 140)
-                ry = 360.0 + random.uniform(-120, 360)
+                ry = WINDOW_HEIGHT / 2.0 + random.uniform(-120, 360)
                 particles.append(Particle2D(
                     rx, ry,
                     kind="sparkle",
